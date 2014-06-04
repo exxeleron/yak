@@ -122,7 +122,7 @@ class QComponentConfiguration(ComponentConfiguration):
     """
 
     typeid = "q"
-    attrs = ComponentConfiguration.attrs + ["port", "multithreaded", "libs", "mem_cap", "kdb_user", "kdb_password", "u_opt", "u_file" ]
+    attrs = ComponentConfiguration.attrs + ["port", "multithreaded", "libs", "mem_cap", "u_opt", "u_file" ]
 
     def _get_port(self, cfg, default = 0):
         port_attr = "basePort"
@@ -142,8 +142,6 @@ class QComponentConfiguration(ComponentConfiguration):
         self.libs = self._get_list("libs", cfg, [])
         self.mem_cap = self._get_value("memCap", cfg)
         self.mem_cap = self._int_(self.mem_cap) if self.mem_cap else None
-        self.kdb_user = self._get_value("kdbUser", cfg)
-        self.kdb_password = self._get_raw_value("kdbPassword", cfg)
         self.u_opt = self._get_value("uOpt", cfg)
         self.u_file = self._get_value("uFile", cfg)
 
