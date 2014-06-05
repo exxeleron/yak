@@ -10,9 +10,13 @@ It is capable of starting, stopping, restarting different processes and collecti
 
 The yak script can be branded with current version, timestamp by altering the code before creating the package. 
 
-To brand using values defined in `setup.py` execute: `python setup.py imprint`.
+To brand using values defined in `setup.py` execute:
 
-Version and timestamp values can be ovverriden from command line: `python setup.py imprint --version=3.0.0 --tstamp=20140415114830`.
+`python setup.py imprint`.
+
+Version and timestamp values can be ovverriden from command line: 
+
+`python setup.py imprint --version=3.0.0 --tstamp=20140415114830`.
 
 
 #### Freezing application
@@ -43,7 +47,6 @@ Instructions:
  - Python 2.7 (Python 2.6 can be used if ordereddict package is installed)
  - altgraph 0.9
  - bbfreeze 1.1.2
- - bbfreeze-loader 1.1.2
  - configobj 5.0.4
  - psutil 1.2.1
  - pywin32 (required on: windows) 

@@ -1,5 +1,4 @@
 altgraph==0.9
 bbfreeze==1.1.2
-bbfreeze-loader==1.1.0
 configobj==5.0.4
 psutil==1.2.1

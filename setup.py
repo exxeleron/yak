@@ -130,7 +130,7 @@ class imprint(Command):
 
 setup(
     name = "yak",
-    version = os.environ.get("version", "3.0.0"),
+    version = os.environ.get("version", "3.0.1"),
     description = "process components for enterprise components",
 
     license = "Apache License Version 2.0",
