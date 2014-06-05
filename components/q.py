@@ -122,7 +122,7 @@ class QComponentConfiguration(ComponentConfiguration):
     """
 
     typeid = "q"
-    attrs = ComponentConfiguration.attrs + ["port", "multithreaded", "libs", "mem_cap", "u_opt", "u_file" ]
+    attrs = ComponentConfiguration.attrs + ["port", "multithreaded", "libs", "common_libs","mem_cap", "u_opt", "u_file" ]
 
     def _get_port(self, cfg, default = 0):
         port_attr = "basePort"
@@ -140,6 +140,7 @@ class QComponentConfiguration(ComponentConfiguration):
         self.port = self._get_port(cfg)
         self.port = self.port * (-1 if self.multithreaded else 1) if self.port else self.port
         self.libs = self._get_list("libs", cfg, [])
+        self.common_libs = self._get_list("commonLibs", cfg, [])
         self.mem_cap = self._get_value("memCap", cfg)
         self.mem_cap = self._int_(self.mem_cap) if self.mem_cap else None
         self.u_opt = self._get_value("uOpt", cfg)
@@ -153,6 +154,9 @@ class QComponentConfiguration(ComponentConfiguration):
         if self.command_args:
             cmd += " {0}".format(self.command_args)
 
+        if self.common_libs:
+            cmd += " -commonLibs {0}".format(" ".join(self.common_libs))
+            
         if self.libs:
             cmd += " -libs {0}".format(" ".join(self.libs))
             
