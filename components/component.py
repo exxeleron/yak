@@ -334,8 +334,12 @@ class ComponentConfiguration(object):
         raw_value = self._get_raw_value(attr, cfg, default)
         return [self._expand_variables(v) for v in raw_value] if isinstance(raw_value, list) else [self._expand_variables(raw_value)]
 
+    def _get_file(self, attr, cfg, default = None):
+        f = self._get_value(attr, cfg, default)
+        return os.path.normpath(f) if f else f
+
     def _get_path(self, attr, cfg, default = None):
-        path = self._get_value(attr, cfg)
+        path = self._get_value(attr, cfg, default)
         return os.path.normpath(path).replace("\\", "/") if path else os.curdir
 
     def _get_path_list(self, attr, cfg, default = []):

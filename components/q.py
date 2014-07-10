@@ -144,7 +144,7 @@ class QComponentConfiguration(ComponentConfiguration):
         self.mem_cap = self._get_value("memCap", cfg)
         self.mem_cap = self._int_(self.mem_cap) if self.mem_cap else None
         self.u_opt = self._get_value("uOpt", cfg)
-        self.u_file = self._get_value("uFile", cfg)
+        self.u_file = self._get_file("uFile", cfg)
 
     @property
     def full_cmd(self):
