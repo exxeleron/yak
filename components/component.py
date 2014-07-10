@@ -302,6 +302,8 @@ class ComponentConfiguration(object):
             if cfg_group.has_key(attr):
                 value = cfg_group[attr]
                 break
+        if value and isinstance(value, basestring) and value.upper() == "NULL":
+            value = None
         if required and not value:
             raise ConfigurationError("Component {1} is missing required parameter {0}".format(attr, self.uid))
         return value

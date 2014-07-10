@@ -3,6 +3,7 @@
 ------------------------------------------------------------------------------
 
   - uFile attribute is now normalized to platform dependent representation
+  - Configuration parsing: explicit NULL values are treated same as empty values
 
 ------------------------------------------------------------------------------
   yak 3.0.1 [2014.06.05]
