@@ -37,7 +37,7 @@ else:
 
 
 def is_empty(path):
-    return os.stat(path).st_size == 0
+    return os.path.isfile(path) and os.stat(path).st_size == 0
 
 
 # generic from psutil

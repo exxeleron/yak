@@ -109,12 +109,15 @@ class QComponent(Component):
     def status(self):
         """Returns status of a component"""
         st = super(QComponent, self).status
-        if (st == Status.TERMINATED or st == Status.DISTURBED) and not osutil.is_empty(self.stderr):
+        try:
+            if (st == Status.TERMINATED or st == Status.DISTURBED) and not osutil.is_empty(self.stderr):
                 stderr = open(self.stderr, "r")
                 err = osutil.open_mmap(stderr.fileno())
-                if err[-8:].strip()[-6:] == "wsfull" : return Status.WSFULL
-                if err[-10:].strip()[-8:] == "-w abort" : return Status.WSFULL
-        return st
+                if err[-8:].strip()[-6:] == "wsfull" : st = Status.WSFULL
+                if err[-10:].strip()[-8:] == "-w abort" : st = Status.WSFULL
+        finally:
+            return st
+
 
 class QComponentConfiguration(ComponentConfiguration):
     """
@@ -122,7 +125,7 @@ class QComponentConfiguration(ComponentConfiguration):
     """
 
     typeid = "q"
-    attrs = ComponentConfiguration.attrs + ["port", "multithreaded", "libs", "common_libs","mem_cap", "u_opt", "u_file" ]
+    attrs = ComponentConfiguration.attrs + ["port", "multithreaded", "libs", "common_libs", "mem_cap", "u_opt", "u_file" ]
 
     def _get_port(self, cfg, default = 0):
         port_attr = "basePort"
@@ -156,10 +159,10 @@ class QComponentConfiguration(ComponentConfiguration):
 
         if self.common_libs:
             cmd += " -commonLibs {0}".format(" ".join(self.common_libs))
-            
+
         if self.libs:
             cmd += " -libs {0}".format(" ".join(self.libs))
-            
+
         if self.port:
             cmd += " -p {0:d}".format(self.port)
 
@@ -178,15 +181,7 @@ class QBatch(QComponent):
     @property
     def status(self):
         st = super(QBatch, self).status
-        if (st == Status.TERMINATED or st == Status.DISTURBED) and not osutil.is_empty(self.stderr):
-            stderr = open(self.stderr, "r")
-            err = osutil.open_mmap(stderr.fileno())
-            if err[-8:].strip()[-6:] == "wsfull" : return Status.WSFULL
-            if err[-10:].strip()[-8:] == "-w abort" : return Status.WSFULL
-        if (st == Status.TERMINATED):
-            return Status.STOPPED
-        return st
-
+        return st if st != Status.TERMINATED else Status.STOPPED
 
 class QBatchConfiguration(QComponentConfiguration):
     """Batch processes configuration definition. """
