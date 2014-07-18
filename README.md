@@ -29,8 +29,11 @@ Requirements:
 Instructions:
 
 Execute:
+
   `pyinstaller yak.spec`
+  
 or:
+
   `pyinstaller yak-win.spec` on Windows platform
 
 Binary distribution is being built to directory: `dist/yak`.
@@ -39,6 +42,7 @@ Binary distribution is being built to directory: `dist/yak`.
 #### Packaging application
 
 Binary distribution can be packed to a single ZIP archive by executing:
+
 `python setup.py package`
 
    
@@ -61,6 +65,8 @@ Instructions:
  - pyreadline 1.7 (required on: windows)
 
 Required libraries can be installed using [pip](https://pypi.python.org/pypi/pip).
-Execute: `pip install -r requirements.txt`
+Execute: 
+
+`pip install -r requirements.txt` to install dependencies.
 
 Note that this does not install additional Windows dependencies.
