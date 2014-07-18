@@ -21,23 +21,18 @@ import shutil
 from distutils.core import setup, Command
 
 
-class bbfreeze(Command):
-    description = "bbfreeze wrapper"
+class package(Command):
+    description = "creates an archive out of a freezed binaries"
     user_options = [("name=", "n", "name"),
                     ("version=", "v", "version"),
                     ("platform=", "p", "platform suffix"),
                     ]
 
     def initialize_options(self):
-        self.include_py = False
         self.name = None
         self.version = None
         self.platform = None
         self.app_name = None
-        self.includes = None
-        self.excludes = None
-        self.extra_libs = None
-        self.data_files = None
         self.dist_dir = None
 
     def finalize_options(self):
@@ -46,38 +41,10 @@ class bbfreeze(Command):
         self.version = self.version if self.version else self.distribution.metadata.version
         self.platform = self.platform if self.platform else get_platform()
         self.app_name = "%s-%s-%s" % (self.name, self.version, self.platform)
-        self.includes = self.includes if self.includes else ()
-        self.excludes = self.excludes if self.excludes else ()
-        self.extra_libs = self.extra_libs if self.extra_libs else []
-        self.data_files = self.data_files if self.data_files else []
-        self.dist_dir = self.dist_dir if self.dist_dir else os.path.join("dist", self.app_name)
+        self.dist_dir = self.dist_dir if self.dist_dir else os.path.join("dist", self.name)
 
     def run(self):
-        from bbfreeze import Freezer
         from distutils.archive_util import make_archive
-
-        freezer = Freezer(distdir = self.dist_dir,
-                          includes = self.includes,
-                          excludes = self.excludes)
-        freezer.include_py = self.include_py
-
-        if self.distribution.scripts:
-            for script in self.distribution.scripts:
-                freezer.addScript(script, gui_only = False)
-
-        # execute freeze
-        freezer()
-        # include extra libs - hack for Unix
-        if self.extra_libs:
-            print "extra_libs: ", self.extra_libs
-            for lib in self.extra_libs:
-                shutil.copy(lib, self.dist_dir)
-        # include data_files
-        if self.data_files:
-            print "data_files: ", self.data_files
-            for df in self.data_files:
-                shutil.copy(df, self.dist_dir)
-        # archived distribution
         archived = make_archive(self.app_name, "zip", self.dist_dir)
         package = os.path.join("dist", self.app_name + ".zip")
         if os.path.exists(package):
@@ -130,7 +97,7 @@ class imprint(Command):
 
 setup(
     name = "yak",
-    version = os.environ.get("version", "3.0.2"),
+    version = os.environ.get("version", "3.1.0"),
     description = "process components for enterprise components",
 
     license = "Apache License Version 2.0",
@@ -139,7 +106,7 @@ setup(
     author_email = "info@exxeleron.com",
     url = "http://www.devnet.de/exxeleron/enterprise-components/",
 
-    cmdclass = {"freeze": bbfreeze,
+    cmdclass = {"package": package,
                 "imprint": imprint,
                },
     
@@ -147,7 +114,4 @@ setup(
      
     scripts = ["scripts/yak.py"],
     py_modules = [],
-    options = {"freeze": dict(data_files = ["scripts/yak_complete_bash.sh"],
-                              ),
-               },
 )

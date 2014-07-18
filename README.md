@@ -1,4 +1,4 @@
-## yak 3.0
+## yak 3.1
 
 yak is an application used to manage Enterprise Components deployed on a single host.
 
@@ -21,18 +21,27 @@ Version and timestamp values can be ovverriden from command line:
 
 #### Freezing application
 
-Executable version of the yak is created with the [bbfreeze](https://pypi.python.org/pypi/bbfreeze) tool.
+Executable version of the yak is created with the [pyinstaller](http://www.pyinstaller.org/) tool.
 
 Requirements:
- - bbfreeze package installed
+ - pyinstaller package installed
 
 Instructions:
- - Execute:
-   `python setup.py freeze`
- - Binary distribution is being built to directory:
-   `dist/yak-${platform}`
+
+Execute:
+  `pyinstaller yak.spec`
+or:
+  `pyinstaller yak-win.spec` on Windows platform
+
+Binary distribution is being built to directory: `dist/yak`.
 
 
+#### Packaging application
+
+Binary distribution can be packed to a single ZIP archive by executing:
+`python setup.py package`
+
+   
 #### Testing
 
 Application uses py.test as a test runner for unit tests.
@@ -45,13 +54,11 @@ Instructions:
 #### Requirements
 
  - Python 2.7 (Python 2.6 can be used if ordereddict package is installed)
- - altgraph 0.9
- - bbfreeze 1.1.2
+ - pyinstaller 2.1
  - configobj 5.0.4
  - psutil 1.2.1
  - pywin32 (required on: windows) 
  - pyreadline 1.7 (required on: windows)
-
 
 Required libraries can be installed using [pip](https://pypi.python.org/pypi/pip).
 Execute: `pip install -r requirements.txt`
