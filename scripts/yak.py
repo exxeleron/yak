@@ -69,7 +69,7 @@ class ComponentManagerShell(cmd.Cmd):
     def __init__(self, options):
         cmd.Cmd.__init__(self)
         self._options = options
-        self._manager = manager.ComponentManager(options.config, options.status)
+        self._manager = manager.ComponentManager(os.path.normpath(options.config), os.path.normpath(options.status))
         self._parse_format(options.format, options.delimiter)
         self._complete_names = self._manager.groups.keys() + self._manager.dependencies_order[:]
 
@@ -402,7 +402,7 @@ def init_logging(logfile):
 
 
 if __name__ == "__main__":
-    opts = shlex.split(os.environ.get("YAK_OPTS", ""), posix = False)
+    opts = shlex.split(os.environ.get("YAK_OPTS", "").replace('\\', '/'), posix = True)
     opts.extend(sys.argv[1:])
 
     opt_parser = get_opt_parser()
