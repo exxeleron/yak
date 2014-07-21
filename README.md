@@ -4,6 +4,22 @@ yak is an application used to manage Enterprise Components deployed on a single 
 
 It is capable of starting, stopping, restarting different processes and collecting information using convenient command line interface.
 
+
+### OS support
+
+Primary operating system for yak is Linux. yak also provides limited/experimental support for Windows and Mac OS X.
+
+#### Windows
+
+Limitations:
+ - `interrupt` command terminates process instead of sending an interruption signal
+
+#### Mac OS X (experimental)
+
+Limitations:
+ - `cpuAffinity` configuration attribute is not supported and is ignored
+
+
 ### Building package
 
 #### Branding application
@@ -64,7 +80,7 @@ Instructions:
  - pywin32 (required on: windows) 
  - pyreadline 1.7 (required on: windows)
 
-Required libraries can be installed using [pip](https://pypi.python.org/pypi/pip).
+Required libraries can be conveniently installed using [pip](https://pypi.python.org/pypi/pip).
 Execute: 
 
 `pip install -r requirements.txt` to install dependencies.

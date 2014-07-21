@@ -27,11 +27,27 @@ __all__ = ["is_alive", "is_empty", "execute",
 def __nop__(*args):
     pass
 
+def set_affinity(pid, cpus):
+    try:
+        p = psutil.Process(pid)
+        return p.set_cpu_affinity(cpus)
+    except psutil.NoSuchProcess:
+        pass
+
+def get_affinity(pid):
+    try:
+        p = psutil.Process(pid)
+        return p.get_cpu_affinity()
+    except psutil.NoSuchProcess:
+        pass
+
 
 if sys.platform.lower().startswith("win32"):
     from osutil._win32 import *
 elif sys.platform.lower().startswith("linux"):
     from osutil._linux import *
+elif sys.platform.lower().startswith("darwin"):
+    from osutil._osx import *
 else:
     raise NotImplementedError("%s platform is not supported" % sys.platform)
 
@@ -83,16 +99,3 @@ def get_memory_percent(pid):
     except psutil.NoSuchProcess:
         pass
 
-def set_affinity(pid, cpus):
-    try:
-        p = psutil.Process(pid)
-        return p.set_cpu_affinity(cpus)
-    except psutil.NoSuchProcess:
-        pass
-
-def get_affinity(pid):
-    try:
-        p = psutil.Process(pid)
-        return p.get_cpu_affinity()
-    except psutil.NoSuchProcess:
-        pass
