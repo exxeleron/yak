@@ -31,7 +31,7 @@ from components import manager, component
 from components.utils import get_full_exc_info, get_short_exc_info, to_camel_case, to_underscore
 
 
-IMPRINT = {'script': 'yak', 'tstamp': '20140516100542', 'version': '3.0.0', 'name': 'yak', 'author': 'exxeleron'} ### imprint ###
+IMPRINT = {'script': 'yak', 'tstamp': '20140516100542', 'version': '3.0.0', 'name': 'yak', 'author': 'exxeleron'}  ### imprint ###
 ROOT_DIR = os.path.dirname(sys.path[0])
 VIEWER = None
 HLINE = "-" * 80
@@ -122,6 +122,7 @@ class ComponentManagerShell(cmd.Cmd):
     # decorators
     def _get_components_list_and_params(self, args):
         components = []
+        ignored_components = []
 
         params = {}
         identifiers = []
@@ -133,16 +134,25 @@ class ComponentManagerShell(cmd.Cmd):
             if arguments[idx][0] == "-" and idx + 1 < len(arguments):
                 params[arguments[idx]] = arguments[idx + 1]
                 idx += 1
-            else :
+            else:
                 identifiers.append(arguments[idx])
 
             idx += 1
 
         if len(identifiers) > 0:
             for id in identifiers:
-                if id == "*" :
-                    components = self._manager.dependencies_order[:]
-                else :
+                if id.startswith("!"):
+                    ignored = True
+                    id = id[1:]
+                else:
+                    ignored = False
+
+                if id == "*":
+                    if not ignored:
+                        components = self._manager.dependencies_order[:]
+                    else:
+                        ignored_components = self._manager.dependencies_order[:]
+                else:
                     ids = id.split(".")
                     if len(ids) == 1:  # namespace or group
                         if id in self._manager.groups:
@@ -150,35 +160,39 @@ class ComponentManagerShell(cmd.Cmd):
                         else:
                             group = [uid for uid in self._manager.dependencies_order if uid.startswith(id)]
                         if (group):
-                            components.extend(group)
+                            components.extend(group) if not ignored else ignored_components.extend(group)
                         else:
-                            raise ComponentManagerShellError("Trying to access unmanaged group: {0}".format(id))
+                            raise ComponentManagerShellError("Trying to refer unmanaged group: {0}".format(id))
                     elif len(ids) == 2:  # component
                         if (id in self._manager.dependencies_order):
-                            components.append(id)
+                            components.append(id) if not ignored else ignored_components.append(id)
                         else:
-                            raise ComponentManagerShellError("Trying to access unmanaged component: {0}".format(id))
+                            raise ComponentManagerShellError("Trying to refer unmanaged component: {0}".format(id))
                     else:  # error
                         raise ComponentManagerShellError("Malformed group/component identifier: {0}".format(id))
 
-            components = [s for s in self._manager.dependencies_order if s in components]  # remove duplicates, restore runtime order
+            # remove duplicates, restore runtime order
+            components = [s for s in self._manager.dependencies_order if s in components]
+            ignored_components = set([s for s in self._manager.dependencies_order if s in ignored_components])
+            # remove ignored components
+            components = [id for id in components if id not in ignored_components]
         return components, params
 
     def _allow_empty_components_list(f):  # @NoSelf
         def expand_to_all_components(self, args):
-            if args :
+            if args:
                 return f(self, args)
-            else :
+            else:
                 return f(self, "*")
         return expand_to_all_components
 
     def _multiple_components_allowed(f):  # @NoSelf
         def multi_components_command(self, args):
-            if args :
+            if args:
                 ComponentManagerShell.logger.info("%s %s", f.func_name[3:], args, extra = {"user": get_username()})
                 self._manager.reload()
                 return f(self, *self._get_components_list_and_params(args))
-            else :
+            else:
                 raise ComponentManagerShellError("Group, namespace or component id required")
         return multi_components_command
 
