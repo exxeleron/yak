@@ -24,11 +24,18 @@ import subprocess
 import sys
 
 from datetime import datetime
+from functools import partial
 from optparse import OptionParser
 
 from osutil import get_username
 from components import manager, component
 from components.utils import get_full_exc_info, get_short_exc_info, to_camel_case, to_underscore
+
+try:
+    from collections import OrderedDict
+except ImportError:  # python < 2.7 -> try to import ordereddict
+    from ordereddict import OrderedDict
+
 
 
 IMPRINT = {'script': 'yak', 'tstamp': '20140516100542', 'version': '3.0.0', 'name': 'yak', 'author': 'exxeleron'}  ### imprint ###
@@ -72,6 +79,16 @@ class ComponentManagerShell(cmd.Cmd):
         self._manager = manager.ComponentManager(os.path.normpath(options.config), os.path.normpath(options.status))
         self._parse_format(options.format, options.delimiter)
         self._complete_names = self._manager.groups.keys() + self._manager.dependencies_order[:]
+
+        if options.alias:
+            for alias, commands in options.alias.iteritems():
+                command_functions = []
+                for c in commands:
+                    if hasattr(self, "do_" + c):
+                        command_functions.append(getattr(self, "do_" + c))
+                    else:
+                        raise ComponentManagerShellError("Alias: '{0}' refers to unknown command: '{1}'".format(alias, c))
+                setattr(self, "do_" + alias, partial(self._evaluate_alias, command_functions))
 
     def _parse_format(self, formating, delimiter):
         r = re.compile("\d+")
@@ -193,7 +210,7 @@ class ComponentManagerShell(cmd.Cmd):
                 self._manager.reload()
                 return f(self, *self._get_components_list_and_params(args))
             else:
-                raise ComponentManagerShellError("Group, namespace or component id required")
+                raise ComponentManagerShellError("Command: '{0}' requires group, namespace or component id(s)".format(f.__name__[3:]))
         return multi_components_command
 
     def _single_component_allowed(f):  # @NoSelf
@@ -201,7 +218,7 @@ class ComponentManagerShell(cmd.Cmd):
             ComponentManagerShell.logger.info("%s %s", f.func_name[3:], arg, extra = {"user": get_username()})
             components, params = self._get_components_list_and_params(arg)
             if len(components) != 1:
-                raise ComponentManagerShellError("Operation can only be performed on single component")
+                raise ComponentManagerShellError("Command: '{0}' can only be performed on single component".format(f.__name__[3:]))
             self._manager.reload()
             return f(self, components[0], params)
         return single_component_command
@@ -249,7 +266,7 @@ class ComponentManagerShell(cmd.Cmd):
         if isinstance(value, (list, tuple, set)):
             return ", ".join(str(e) for e in value)
         elif isinstance(value, datetime):
-            return value.strftime('%Y.%m.%d %H:%M:%S')
+            return value.strftime("%Y.%m.%d %H:%M:%S")
         elif isinstance(value, (int, long)):
             return str(value)
         elif isinstance(value, float):
@@ -262,11 +279,25 @@ class ComponentManagerShell(cmd.Cmd):
         return value
 
     # shell commands
+    def _evaluate_alias(self, commands, args):
+        for command in commands:
+            ret_val = command(args)
+            if ret_val:
+                return ret_val
+
     def do__show_options(self, args):
         ENTRY_FORMAT = "{0:>20}   {1}"
+
+        print "  Options:"
         for k, v in self._options.__dict__.iteritems():
             if v:
-                print ENTRY_FORMAT.format(k , v)
+                if k != "alias":
+                    print ENTRY_FORMAT.format(k, v)
+
+        if self._options.alias:
+            print "  Aliases:"
+            for a, c in self._options.alias.iteritems():
+                print ENTRY_FORMAT.format(a, ", ".join(c))
 
     def do__show_order(self, args):
         print "\n".join(self._manager.dependencies_order)
@@ -373,6 +404,13 @@ USAGE = "Usage: %prog [COMMAND] [COMPONENT|GROUP] [OPTIONS]\n\nCommands:\n"\
         + "\n".join(["  {0:>10}   {1}".format(c, ch) for c, ch in COMMANDS])
 
 # bootstrap functions
+def define_aliases(option, opt, value, parser):
+    if not getattr(parser.values, option.dest):
+        setattr(parser.values, option.dest, OrderedDict())
+
+    getattr(parser.values, option.dest)[value[0]] = map(str.strip, value[1].split(","))
+
+
 def get_opt_parser():
     opt_parser = OptionParser(usage = USAGE)
     opt_parser.add_option("-c", "--config", help = "configuration [default: %default]", default = os.path.join(ROOT_DIR, "yak.cfg"))
@@ -381,6 +419,7 @@ def get_opt_parser():
     opt_parser.add_option("-v", "--viewer", help = "external viewer")
     opt_parser.add_option("-d", "--delimiter", help = "column delimiter for the info command [default: padded spaces]", default = " ")
     opt_parser.add_option("-f", "--format", help = "display format for info command", default = "uid:18#pid:5#port:6#status:11#started:19#stopped:19")
+    opt_parser.add_option("-A", "--alias", help = "define command alias e.g.: --alias restart_console \"stop, console\"", action = "callback", callback = define_aliases, nargs = 2, type = "str")
     opt_parser.add_option("-a", "--arguments", help = "additional arguments passed to process - valid only for 'start', 'restart' and 'console' commands", default = "")
     return opt_parser
 

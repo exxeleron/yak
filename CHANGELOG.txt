@@ -4,6 +4,8 @@
   
   - Change application packaging to PyInstaller
   - Experimental: Mac OS X support
+  - Introduce command aliases
+  - Add inversion modifier for listing components and/or groups
 
 ------------------------------------------------------------------------------
   yak 3.0.2 [2014.07.18]
