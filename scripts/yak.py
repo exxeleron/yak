@@ -78,7 +78,7 @@ class ComponentManagerShell(cmd.Cmd):
         self._options = options
         self._manager = manager.ComponentManager(os.path.normpath(options.config), os.path.normpath(options.status))
         self._parse_format(options.format, options.delimiter)
-        self._complete_names = self._manager.groups.keys() + self._manager.dependencies_order[:]
+        self._complete_names = sorted(set(self._manager.groups.keys()) | set(self._manager.namespaces)) + self._manager.dependencies_order[:]
 
         if options.alias:
             for alias, commands in options.alias.iteritems():
@@ -113,11 +113,15 @@ class ComponentManagerShell(cmd.Cmd):
     def completenames(self, text, *ignored):
         dotext = "do_" + text
         hiddendotext = "do__" + text
-        return [a[3:] for a in self.get_names() if a.startswith(dotext) and not a.startswith(hiddendotext)]
+        return [a[3:] for a in dir(self) if a.startswith(dotext) and not a.startswith(hiddendotext)]
 
     def completedefault(self, text, *ignored):
         if text:
-            return [uid for uid in self._complete_names if uid.startswith(text)]
+            if not text.startswith("!"):
+                return [uid for uid in self._complete_names if uid.startswith(text)]
+            else:
+                text = text[1:]
+                return ["!" + uid for uid in self._complete_names if uid.startswith(text)]
         else:
             return self._complete_names
 
@@ -139,7 +143,7 @@ class ComponentManagerShell(cmd.Cmd):
     # decorators
     def _get_components_list_and_params(self, args):
         components = []
-        ignored_components = []
+        ignored_components = set()
 
         params = {}
         identifiers = []
@@ -168,7 +172,7 @@ class ComponentManagerShell(cmd.Cmd):
                     if not ignored:
                         components = self._manager.dependencies_order[:]
                     else:
-                        ignored_components = self._manager.dependencies_order[:]
+                        ignored_components = set(self._manager.dependencies_order[:])
                 else:
                     ids = id.split(".")
                     if len(ids) == 1:  # namespace or group
@@ -177,22 +181,19 @@ class ComponentManagerShell(cmd.Cmd):
                         else:
                             group = [uid for uid in self._manager.dependencies_order if uid.startswith(id)]
                         if (group):
-                            components.extend(group) if not ignored else ignored_components.extend(group)
+                            components.extend(group) if not ignored else ignored_components.update(group)
                         else:
                             raise ComponentManagerShellError("Trying to refer unmanaged group: {0}".format(id))
                     elif len(ids) == 2:  # component
                         if (id in self._manager.dependencies_order):
-                            components.append(id) if not ignored else ignored_components.append(id)
+                            components.append(id) if not ignored else ignored_components.add(id)
                         else:
                             raise ComponentManagerShellError("Trying to refer unmanaged component: {0}".format(id))
                     else:  # error
                         raise ComponentManagerShellError("Malformed group/component identifier: {0}".format(id))
 
-            # remove duplicates, restore runtime order
-            components = [s for s in self._manager.dependencies_order if s in components]
-            ignored_components = set([s for s in self._manager.dependencies_order if s in ignored_components])
-            # remove ignored components
-            components = [id for id in components if id not in ignored_components]
+            # remove duplicates, restore runtime order, remove ignored components
+            components = [s for s in self._manager.dependencies_order if s in components and s not in ignored_components]
         return components, params
 
     def _allow_empty_components_list(f):  # @NoSelf

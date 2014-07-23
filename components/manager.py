@@ -31,7 +31,7 @@ class ComponentManager(object):
     """
 
     def __init__(self, config_file, status_file):
-        self._configuration, self._groups = ComponentConfiguration.load_configuration(config_file)
+        self._configuration, self._groups, self._namespaces = ComponentConfiguration.load_configuration(config_file)
         self._persistance = StatusPersistance(status_file)
         self._dependency_order = self._compute_dependencies()
         self.reload()
@@ -109,6 +109,10 @@ class ComponentManager(object):
         """Returns managed groups."""
         return self._groups
 
+    @property
+    def namespaces(self):
+        """Returns managed namespaces."""
+        return self._namespaces
 
     def reload(self):
         """

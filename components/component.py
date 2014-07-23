@@ -414,6 +414,7 @@ class ComponentConfiguration(object):
         confobj = ConfigObj(filename)
         config = OrderedDict()
         groups = dict()
+        namespaces = set()
 
         global_params = dict()
         for param in confobj.scalars:
@@ -428,6 +429,7 @@ class ComponentConfiguration(object):
                 c_params = c_header.split(":")
                 c_namespace, c_id = c_params[0].split(".")
                 c_type = confobj[g_header][c_header]["type"].split(":")[0]
+                namespaces.add(c_namespace)
 
                 if (not c_type == "c"):
                     if len(c_params) == 1:
@@ -451,7 +453,7 @@ class ComponentConfiguration(object):
                 if not uid in config:
                     raise ConfigurationError("Alias {0} references unmanaged component {1}".format(group, uid))
 
-        return (config, groups)
+        return (config, groups, sorted(namespaces))
 
     @staticmethod
     def create_instance(typeid, uid, cfg):

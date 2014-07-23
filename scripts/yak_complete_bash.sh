@@ -5,18 +5,18 @@ _yak() {
   prev="${COMP_WORDS[COMP_CWORD-1]}"
   opts="start stop restart info interrupt console log err out details test"
   services="$(yak !)"
-  
+  negservices="$(yak ! | sed -e 's/^/!/g')"
+
   case "${prev}" in
-      start|stop|restart|info|interrupt|console|log|err|out|details)
-          COMPREPLY=( $(compgen -W "${services}" -- ${cur}) )
+      yak)
+          COMPREPLY=($(compgen -W "${opts}" -- ${cur}))
           return 0
           ;;
       *)
+          COMPREPLY=( $(compgen -W "${services} ${negservices}" -- ${cur}) )
+          return 0
           ;;
   esac
-  
-  COMPREPLY=($(compgen -W "${opts}" -- ${cur}))
-  return 0
 }
 
 complete -F _yak yak
