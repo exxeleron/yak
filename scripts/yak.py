@@ -353,7 +353,7 @@ class ComponentManagerShell(cmd.Cmd):
     @_multiple_components_allowed
     def do_stop(self, components, params):
         print "Stopping components..."
-        return self._apply_command(self._manager.stop, components)
+        return self._apply_command(self._manager.stop, reversed(components))
 
     def do_restart(self, args):
         retval = self.do_stop(args)
@@ -370,7 +370,7 @@ class ComponentManagerShell(cmd.Cmd):
     @_multiple_components_allowed
     def do_interrupt(self, components, params):
         print "Interrupting components..."
-        return self._apply_command(self._manager.interrupt, components)
+        return self._apply_command(self._manager.interrupt, reversed(components))
 
     @_error_handler
     @_single_component_allowed
