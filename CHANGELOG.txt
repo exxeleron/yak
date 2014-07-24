@@ -6,6 +6,8 @@
   - Experimental: Mac OS X support
   - Introduce command aliases
   - Add inversion modifier for listing components and/or groups
+  - Add utc/local switch (timestampMode flag) for stamping start/stop times
+  - Reverse order of components while executing stop and interrupt commands
 
 ------------------------------------------------------------------------------
   yak 3.0.2 [2014.07.18]

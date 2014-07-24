@@ -73,6 +73,18 @@ class ConfigurationError(ComponentManagerError):
     pass
 
 
+class TimestampMode:
+    UTC = "UTC"
+    LOCAL = "LOCAL"
+
+    @staticmethod
+    def from_string(name):
+        try:
+            return getattr(TimestampMode, name.upper())
+        except:
+            raise AttributeError("Invalid timestampMode: " + name)
+        
+
 class Status(object):
     DISTURBED = "DISTURBED"
     RUNNING = "RUNNING"
@@ -106,7 +118,7 @@ class Component(object):
         return self.__dict__ == other.__dict__
 
     def initialize(self):
-        self.started = dt.utcnow()
+        self.started = dt.utcnow() if self.configuration.timestamp_mode == TimestampMode.UTC else dt.now()
         self.started_by = osutil.get_username()
 
         self.stopped = None
@@ -130,12 +142,12 @@ class Component(object):
         env = os.environ.copy()
         env.update(self.configuration.vars)
         env.update(self.configuration.env)
-        
+
         if self.stdenv:
             with open(self.stdenv, "w") as f:
                 for key in env.keys():
                     f.write("{0}: {1}\n".format(key, env[key]))
-            
+
         return env
 
     def execute(self):
@@ -160,7 +172,7 @@ class Component(object):
             else:
                 p.wait()
                 self.pid = None
-                self.stopped = dt.utcnow()
+                self.stopped = dt.utcnow() if self.configuration.timestamp_mode == TimestampMode.UTC else dt.now()
 
     def interactive(self):
         if self.configuration.cpu_affinity:
@@ -177,7 +189,7 @@ class Component(object):
     def terminate(self):
         try:
             osutil.terminate(self.pid, self.configuration.stop_wait)
-            self.stopped = dt.utcnow()
+            self.stopped = dt.utcnow() if self.configuration.timestamp_mode == TimestampMode.UTC else dt.now()
             self.stopped_by = osutil.get_username()
             self.pid = None
         except OSError, e:
@@ -261,7 +273,7 @@ class ComponentConfiguration(object):
     """
 
     typeid = "cmd"
-    attrs = ["uid", "full_cmd", "requires", "command", "command_args", "bin_path", "data_path", "log_path", "cpu_affinity", "start_wait", "stop_wait", "sys_user"]
+    attrs = ["uid", "full_cmd", "requires", "command", "command_args", "bin_path", "data_path", "log_path", "cpu_affinity", "start_wait", "stop_wait", "sys_user", "timestamp_mode"]
 
     def __init__(self, uid, **kwargs):
         self.uid = "{0}.{1}".format(*uid) if len(uid) <= 2 else "{0}.{1}_{2}".format(*uid)
@@ -389,6 +401,7 @@ class ComponentConfiguration(object):
         self.stop_wait = self._float_(self._get_value("stopWait", cfg, 1))
         self.sys_user = self._get_list("sysUser", cfg)
         self.command_args = self._get_value("commandArgs", cfg)
+        self.timestamp_mode = TimestampMode.from_string(self._get_value("timestampMode", cfg, "utc"))
 
         self.env = self._get_env_vars_list(cfg)
 
