@@ -23,6 +23,12 @@ from components.status import StatusPersistance
 
 from copy import copy
 
+
+class DependencyError(ComponentError):
+    pass
+
+
+
 class ComponentManager(object):
     """
     ComponentManager is responsible for keeping track of all managed components.
@@ -47,7 +53,7 @@ class ComponentManager(object):
             deps[component.uid] = list()
 
             if component.uid in component.requires:
-                raise ConfigurationError("Self dependency found for component {0} -> {1}".format(component.uid, ", ".join(component.requires)))
+                raise DependencyError("Self dependency found for component {0} -> {1}".format(component.uid, ", ".join(component.requires)))
 
         for component in self._configuration.values():
             if not component.requires:
@@ -55,7 +61,7 @@ class ComponentManager(object):
             else:
                 for uid in component.requires:
                     if not deps.has_key(uid):
-                        raise ConfigurationError("Dependency to unmanaged component found in {0} -> {1}".format(component.uid, ", ".join(component.requires)))
+                        raise DependencyError("Dependency to unmanaged component found in {0} -> {1}".format(component.uid, ", ".join(component.requires)))
                     deps[uid].append(component.uid)
 
         while no_deps:
@@ -72,7 +78,7 @@ class ComponentManager(object):
                 stale.append(component)
 
         if stale:
-            raise ConfigurationError("Cannot determinate startup order for components {0}".format(", ".join(stale)))
+            raise DependencyError("Cannot determinate startup order for components {0}".format(", ".join(stale)))
 
         return ordered
 
@@ -85,9 +91,9 @@ class ComponentManager(object):
             if self._components.has_key(required_uid):
                 required_component = self._components[required_uid]
                 if not required_component.is_alive:
-                    raise ComponentError("Cannot start component {0}, required component {1} not running".format(component_cfg.uid, required_uid))
+                    raise DependencyError("Cannot start component {0}, required component {1} not running".format(component_cfg.uid, required_uid))
             else:
-                raise ComponentError("Cannot start component {0}, required component {1} not found".format(component_cfg.uid, required_uid))
+                raise DependencyError("Cannot start component {0}, required component {1} not found".format(component_cfg.uid, required_uid))
 
     @property
     def dependencies_order(self):
@@ -147,7 +153,7 @@ class ComponentManager(object):
             self._components[uid] = component
             return True
         except:
-            raise ComponentError("Error while executing: '{0}' {1}".format(component.executed_cmd, sys.exc_info()[1]))
+            raise ComponentError("Error while executing: '{0}'\n{1}".format(component_cfg.full_cmd, sys.exc_info()[1]))
         finally:
             self._persistance.save_status(component)
 

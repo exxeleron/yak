@@ -38,7 +38,7 @@ except ImportError:  # python < 2.7 -> try to import ordereddict
 
 
 
-IMPRINT = {'script': 'yak', 'tstamp': '20140516100542', 'version': '3.0.0', 'name': 'yak', 'author': 'exxeleron'}  ### imprint ###
+IMPRINT = {'script': 'yak', 'tstamp': '20140730113950', 'version': '3.1.0', 'name': 'yak', 'author': 'exxeleron'} ### imprint ###
 ROOT_DIR = os.path.dirname(sys.path[0])
 VIEWER = None
 HLINE = "-" * 80
@@ -242,14 +242,16 @@ class ComponentManagerShell(cmd.Cmd):
                 status = command(component_uid)
                 print "\t{0:<30}\t{1}".format(component_uid, "OK" if status else "Skipped")
             except:
-                failed.append(component_uid)
-                print "\t{0:<30}\tFailed: {1}".format(component_uid, get_short_exc_info())
+                print "\t{0:<30}\tFailed".format(component_uid)
+                failed.append((component_uid, get_short_exc_info()))
                 ComponentManagerShell.logger.error(get_full_exc_info(), extra = {"user": get_username()})
 
         if failed:
-            for component_uid in failed:
+            for component_uid, exc_info in failed:
                 print HLINE
-                print "stderr for component: {0}".format(component_uid)
+                print "Failed to start: {0}".format(component_uid)
+                print exc_info
+                print "\nCaptured stderr:"
                 show_file(self._manager.components[component_uid].stderr, True)
 
             print HLINE

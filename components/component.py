@@ -187,19 +187,13 @@ class Component(object):
             raise ComponentError("Component {0} finished prematurely with code {1}".format(self.uid, p.returncode))
 
     def terminate(self):
-        try:
-            osutil.terminate(self.pid, self.configuration.stop_wait)
-            self.stopped = dt.utcnow() if self.configuration.timestamp_mode == TimestampMode.UTC else dt.now()
-            self.stopped_by = osutil.get_username()
-            self.pid = None
-        except OSError, e:
-            raise ComponentError(e)
+        osutil.terminate(self.pid, self.configuration.stop_wait)
+        self.stopped = dt.utcnow() if self.configuration.timestamp_mode == TimestampMode.UTC else dt.now()
+        self.stopped_by = osutil.get_username()
+        self.pid = None
 
     def interrupt(self):
-        try:
-            osutil.interrupt(self.pid)
-        except OSError, e:
-            raise ComponentError(e)
+        osutil.interrupt(self.pid)
 
     @property
     def is_alive(self):
@@ -421,7 +415,7 @@ class ComponentConfiguration(object):
         Loads configuration from a file.
         @param filename: name of the file to be loaded
         """
-        if not os.path.exists(filename):
+        if not os.path.exists(filename) or not os.path.isfile(filename):
             raise ConfigurationError("Cannot locate configuration file: {0}".format(filename))
 
         confobj = ConfigObj(filename)

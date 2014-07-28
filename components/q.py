@@ -62,6 +62,9 @@ class QComponent(Component):
 
     def execute(self):
         try:
+            if self.configuration.u_file and not os.path.isfile(self.configuration.u_file):
+                raise ComponentError("Cannot locate uFile: {0}".format(self.configuration.u_file))
+
             super(QComponent, self).execute()
         finally:
             self.log = None
@@ -69,6 +72,9 @@ class QComponent(Component):
     def interactive(self):
         if self.configuration.cpu_affinity:
             osutil.set_affinity(os.getpid(), self.configuration.cpu_affinity)
+
+        if self.configuration.u_file and not os.path.isfile(self.configuration.u_file):
+            raise ComponentError("Cannot locate uFile: {0}".format(self.configuration.u_file)) 
 
         env = self._bootstrap_environment()
 
