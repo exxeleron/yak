@@ -22,7 +22,7 @@ try:
 except ImportError:  # python < 2.7 -> try to import ordereddict
     from ordereddict import OrderedDict
 
-from components.component import ComponentConfiguration, ConfigurationError
+from components.component import ComponentConfiguration, ConfigurationError, TimestampMode
 from components.q import QComponentConfiguration
 from components.manager import ComponentManager
 
@@ -52,6 +52,7 @@ class TestConfiguration(unittest.TestCase):
                                                               multithreaded = False,
                                                               kdb_user = "username",
                                                               kdb_password = "p@ssw0rd",
+                                                              timestamp_mode = TimestampMode.UTC,
                                                               ),),
                            ("core.rdb", QComponentConfiguration(tuple(("core", "rdb")),
                                                               command = "q rdb.q",
@@ -69,6 +70,7 @@ class TestConfiguration(unittest.TestCase):
                                                               multithreaded = True,
                                                               kdb_user = "username",
                                                               kdb_password = "p@ssw0rd",
+                                                              timestamp_mode = TimestampMode.UTC,
                                                               ),),
                            ("core.monitor", ComponentConfiguration(tuple(("core", "monitor")),
                                                                  command = "python monitor.py",
@@ -80,6 +82,7 @@ class TestConfiguration(unittest.TestCase):
                                                                  stop_wait = 1,
                                                                  sys_user = ["tcore", "root"],
                                                                  cpu_affinity = [0, 1],
+                                                                 timestamp_mode = TimestampMode.UTC,
                                                                  ),),
                            ("cep.cep_7", QComponentConfiguration(tuple(("cep", "cep_7")),
                                                                command = "q cep.q",
@@ -99,6 +102,7 @@ class TestConfiguration(unittest.TestCase):
                                                                kdb_password = "$h@rd!",
                                                                u_opt = "U",
                                                                u_file = "optfile",
+                                                               timestamp_mode = TimestampMode.UTC,
                                                                ),),
                            ("cep.python", ComponentConfiguration(tuple(("cep", "python")),
                                                                 command = "python",
@@ -109,6 +113,7 @@ class TestConfiguration(unittest.TestCase):
                                                                 start_wait = 1,
                                                                 stop_wait = 1,
                                                                 sys_user = [],
+                                                                timestamp_mode = TimestampMode.UTC,
                                                                 cpu_affinity = [],))]
                           )
 
