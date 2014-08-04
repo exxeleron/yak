@@ -5,6 +5,12 @@ yak is an application used to manage Enterprise Components deployed on a single 
 It is capable of starting, stopping, restarting different processes and collecting information using convenient command line interface.
 
 
+### Documentation
+
+ - [Usage](doc/Usage.md)
+ - [Configuration](doc/Configuration.md)
+
+
 ### OS support
 
 Primary operating system for yak is Linux. yak also provides limited/experimental support for Windows and Mac OS X.
