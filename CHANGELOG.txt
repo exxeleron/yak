@@ -1,5 +1,5 @@
 ------------------------------------------------------------------------------
-  yak 3.1.0 [2014.08.01]
+  yak 3.1.0 [TBA]
 ------------------------------------------------------------------------------
   
   - Change application packaging to PyInstaller
@@ -8,6 +8,7 @@
   - Add inversion modifier for listing components and/or groups
   - Add utc/local switch (timestampMode flag) for stamping start/stop times
   - Reverse order of components while executing stop and interrupt commands
+  - Fix: exit code for console command always indicates error
 
 ------------------------------------------------------------------------------
   yak 3.0.2 [2014.07.18]

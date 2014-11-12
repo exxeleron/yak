@@ -366,7 +366,7 @@ class ComponentManagerShell(cmd.Cmd):
     def do_console(self, component, params):
         print "Starting interactive console..."
         self._apply_params_to_config(params, [component])
-        return self._manager.console(component)
+        return 0 if self._manager.console(component) else 1
 
     @_error_handler
     @_multiple_components_allowed
