@@ -204,10 +204,11 @@ class ComponentManager(object):
             component_cfg.command_args = kwargs['arguments']
 
         try:
-            component.initialize()
+            component.initialize(init_std_paths = False)
             component.interactive()
             return True
         finally:
+            self._persistance.save_status(component)
             if overrides_arguments:
                 component_cfg.command_args = arguments_copy
 

@@ -21,10 +21,10 @@ from components.component import Component
 
 
 class StatusPersistance(object):
-    '''Manages persistence of processes status'''
+    """Manages persistence of processes status"""
 
     __DB_SCRIPT__ = \
-    '''
+    """
     CREATE TABLE IF NOT EXISTS components(
         uid VARCHAR PRIMARY KEY,
         typeid VARCHAR,
@@ -40,7 +40,7 @@ class StatusPersistance(object):
         stopped_by VARCHAR
     );
     PRAGMA journal_mode=WAL;
-    '''
+    """
 
     __ATTRS_COMPONENT__ = ["uid", "typeid", "pid", "executed_cmd",
                          "log", "stdout", "stderr", "stdenv",
@@ -70,19 +70,21 @@ class StatusPersistance(object):
         self.__conn.commit()
 
     def load(self):
-        '''Loads components status data from the status file'''
+        """Loads components status data from the status file"""
         components = dict()
 
         c = self.__conn.cursor()
         c.execute(self.__SELECT_STATUS__)
         for row in c.fetchall():
-            component = Component.create_instance(**dict(**row))
+            args = dict(**row)
+            args["status_persistance"] = self
+            component = Component.create_instance(**args)
             components[component.uid] = component
 
         return components
 
     def save_status(self, component):
-        '''Saves component status in the stats file'''
+        """Saves component status in the status file"""
         data = [getattr(component, attr) for attr in self.__ATTRS_COMPONENT__]
         self.__conn.execute(self.__UPSERT_STATUS__, data)
         self.__conn.commit()

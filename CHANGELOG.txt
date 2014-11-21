@@ -8,6 +8,7 @@
   - Add inversion modifier for listing components and/or groups
   - Add utc/local switch (timestampMode flag) for stamping start/stop times
   - Reverse order of components while executing stop and interrupt commands
+  - Components started via console command are now visible in system status
   - Fix: exit code for console command always indicates error
   - Fix: caching of overwritten component arguments in shell mode
 

@@ -106,6 +106,8 @@ class Component(object):
     def __init__(self, uid, **kwargs):
         self.uid = str(uid)
         self.configuration = kwargs.get("configuration")
+        
+        self._status_persistance = kwargs.get("status_persistance")
 
         self.stdenv = None
         for a in self.attrs[2:]:  # skip uid and read-only properties
@@ -116,9 +118,12 @@ class Component(object):
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
+    
+    def timestamp(self):
+        return dt.utcnow() if self.configuration.timestamp_mode == TimestampMode.UTC else dt.now()
 
-    def initialize(self):
-        self.started = dt.utcnow() if self.configuration.timestamp_mode == TimestampMode.UTC else dt.now()
+    def initialize(self, init_std_paths = True):
+        self.started = self.timestamp()
         self.started_by = osutil.get_username()
 
         self.stopped = None
@@ -134,9 +139,10 @@ class Component(object):
         if not os.path.exists(self.log_path):
             os.makedirs(self.log_path)
 
-        self.stdout = os.path.join(self.log_path, "{0}_{1}.out".format(self.uid, tstamp))
-        self.stderr = os.path.join(self.log_path, "{0}_{1}.err".format(self.uid, tstamp))
-        self.stdenv = os.path.join(self.log_path, "{0}_{1}.env".format(self.uid, tstamp))
+        if init_std_paths:
+            self.stdout = os.path.join(self.log_path, "{0}_{1}.out".format(self.uid, tstamp))
+            self.stderr = os.path.join(self.log_path, "{0}_{1}.err".format(self.uid, tstamp))
+            self.stdenv = os.path.join(self.log_path, "{0}_{1}.env".format(self.uid, tstamp))
 
     def _bootstrap_environment(self):
         env = os.environ.copy()
@@ -172,28 +178,43 @@ class Component(object):
             else:
                 p.wait()
                 self.pid = None
-                self.stopped = dt.utcnow() if self.configuration.timestamp_mode == TimestampMode.UTC else dt.now()
+                self.stopped = self.timestamp()
 
     def interactive(self):
         if self.configuration.cpu_affinity:
             osutil.set_affinity(os.getpid(), self.configuration.cpu_affinity)
 
+        self.executed_cmd = str(self.configuration.full_cmd)
         p = subprocess.Popen(shlex.split(self.configuration.full_cmd, posix = False),
                              cwd = self.configuration.bin_path,
                              env = self._bootstrap_environment()
                              )
+        self.pid = p.pid
+        self.save_status()
+        
         p.communicate()
+
+        self.stopped = self.timestamp()
+        
         if p.returncode:
             raise ComponentError("Component {0} finished prematurely with code {1}".format(self.uid, p.returncode))
 
     def terminate(self):
         osutil.terminate(self.pid, self.configuration.stop_wait)
-        self.stopped = dt.utcnow() if self.configuration.timestamp_mode == TimestampMode.UTC else dt.now()
+        self.stopped = self.timestamp()
         self.stopped_by = osutil.get_username()
         self.pid = None
 
     def interrupt(self):
         osutil.interrupt(self.pid)
+
+    def save_status(self):
+        """Saves component status in the status file"""
+        print [getattr(self, attr) for attr in ["uid", "typeid", "pid", "executed_cmd",
+                         "log", "stdout", "stderr", "stdenv",
+                         "started", "started_by", "stopped", "stopped_by"]]
+        if self._status_persistance:
+            self._status_persistance.save_status(self)
 
     @property
     def is_alive(self):

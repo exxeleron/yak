@@ -82,11 +82,18 @@ class QComponent(Component):
         env["EC_LOG_DEST"] = "FILE,STDERR,CONSOLE"
         env["EC_LOG_LEVEL"] = "DEBUG"
 
+        self.executed_cmd = str(self.configuration.full_cmd)
         p = subprocess.Popen(shlex.split(self.configuration.full_cmd, posix = False),
                              cwd = self.configuration.bin_path,
                              env = env
                              )
+        self.pid = p.pid
+        super(QComponent, self).save_status()
+        
         p.communicate()
+        
+        self.stopped = super(QComponent, self).timestamp()
+        
         if p.returncode:
             raise ComponentError("Component {0} finished prematurely with code {1}".format(self.uid, p.returncode))
 
