@@ -24,7 +24,7 @@ except ImportError:  # python < 2.7 -> try to import ordereddict
 
 from components.component import ComponentConfiguration, ConfigurationError, TimestampMode
 from components.q import QComponentConfiguration
-from components.manager import ComponentManager
+from components.manager import ComponentManager, DependencyError
 
 
 
@@ -145,15 +145,15 @@ class TestConfiguration(unittest.TestCase):
         self.assertEqual(c.dependencies_order, ["core.hdb", "cep.python", "core.rdb", "core.monitor", "cep.cep_7"])
  
     def testDependencyOrderFailSelfDependency(self):
-        with self.assertRaises(ConfigurationError):
+        with self.assertRaises(DependencyError):
             ComponentManager("components/test/self_dep.cfg", "components/test/test.status")
  
     def testDependencyOrderFailCircularDependency(self):
-        with self.assertRaises(ConfigurationError):
+        with self.assertRaises(DependencyError):
             ComponentManager("components/test/circular_dep.cfg", "components/test/test.status")
  
     def testDependencyOrderFailExternalDependency(self):
-        with self.assertRaises(ConfigurationError):
+        with self.assertRaises(DependencyError):
             ComponentManager("components/test/ext_dep.cfg", "components/test/test.status")
  
 
