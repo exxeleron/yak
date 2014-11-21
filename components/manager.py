@@ -133,7 +133,7 @@ class ComponentManager(object):
             else:
                 self._components[configuration.uid].configuration = configuration
 
-    def start(self, uid):
+    def start(self, uid, **kwargs):
         """
         Starts component with given uid. If component is already running, nothing happens.
         @param uid: identifier of the component 
@@ -147,6 +147,12 @@ class ComponentManager(object):
             return False
 
         self._validate_preconditions(component_cfg)
+
+        overrides_arguments = kwargs and 'arguments' in kwargs and kwargs['arguments'] is not None
+        if overrides_arguments:
+            arguments_copy = component_cfg.command_args
+            component_cfg.command_args = kwargs['arguments']
+
         try:
             component.initialize()
             component.execute()
@@ -156,8 +162,10 @@ class ComponentManager(object):
             raise ComponentError("Error while executing: '{0}'\n{1}".format(component_cfg.full_cmd, sys.exc_info()[1]))
         finally:
             self._persistance.save_status(component)
+            if overrides_arguments:
+                component_cfg.command_args = arguments_copy
 
-    def stop(self, uid):
+    def stop(self, uid, **kwargs):
         """
         Stops component with given uid. If component is not running, nothing happens.
         @param uid: identifier of the component
@@ -165,10 +173,10 @@ class ComponentManager(object):
         @raise OSError: if component cannot be stopped.
         """
         component = self._components[uid]
-        
+
         if not component.is_alive:
             return False
-        
+
         try:
             component.terminate()
             self._components[uid] = component
@@ -176,7 +184,7 @@ class ComponentManager(object):
         finally:
             self._persistance.save_status(component)
 
-    def console(self, uid):
+    def console(self, uid, **kwargs):
         """
         Starts component with given uid with attached interactive console. If component is already running, nothing happens.
         @param uid: identifier of the component 
@@ -187,13 +195,23 @@ class ComponentManager(object):
         component_cfg = self._configuration[uid]
         if component.is_alive:
             return False
-        
-        self._validate_preconditions(component_cfg)
-        component.initialize()
-        component.interactive()
-        return True
 
-    def interrupt(self, uid):
+        self._validate_preconditions(component_cfg)
+
+        overrides_arguments = kwargs and 'arguments' in kwargs and kwargs['arguments'] is not None
+        if overrides_arguments:
+            arguments_copy = component_cfg.command_args
+            component_cfg.command_args = kwargs['arguments']
+
+        try:
+            component.initialize()
+            component.interactive()
+            return True
+        finally:
+            if overrides_arguments:
+                component_cfg.command_args = arguments_copy
+
+    def interrupt(self, uid, **kwargs):
         """
         Sends interrupt signal to component with given uid. If component is not running, nothing happens. (UNIX only)
         @param uid: identifier of the component
@@ -203,7 +221,7 @@ class ComponentManager(object):
         component = self._components[uid]
         if not component.is_alive:
             return False
-        
+
         try:
             component.interrupt()
             return True

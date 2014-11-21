@@ -38,7 +38,7 @@ except ImportError:  # python < 2.7 -> try to import ordereddict
 
 
 
-IMPRINT = {'script': 'yak', 'tstamp': '20140730113950', 'version': '3.1.0', 'name': 'yak', 'author': 'exxeleron'} ### imprint ###
+IMPRINT = {'script': 'yak', 'tstamp': '20141121131817', 'version': '3.1.0', 'name': 'yak', 'author': 'exxeleron'} ### imprint ###
 ROOT_DIR = os.path.dirname(sys.path[0])
 VIEWER = None
 HLINE = "-" * 80
@@ -141,24 +141,18 @@ class ComponentManagerShell(cmd.Cmd):
         return cmd.Cmd.parseline(self, line)
 
     # decorators
+    @property
+    def _opt_parser(self):
+        opt_parser = OptionParser()
+        opt_parser.add_option("-a", "--arguments", default = None)
+        return opt_parser
+
     def _get_components_list_and_params(self, args):
         components = []
         ignored_components = set()
 
-        params = {}
-        identifiers = []
-        arguments = shlex.split(args)
-
-        idx = 0;
-
-        while idx < len(arguments):
-            if arguments[idx][0] == "-" and idx + 1 < len(arguments):
-                params[arguments[idx]] = arguments[idx + 1]
-                idx += 1
-            else:
-                identifiers.append(arguments[idx])
-
-            idx += 1
+        (params, identifiers) = self._opt_parser.parse_args(args = shlex.split(args))
+        params = vars(params)
 
         if len(identifiers) > 0:
             for id in identifiers:
@@ -235,11 +229,11 @@ class ComponentManagerShell(cmd.Cmd):
         return tracked_command
 
     # utility functions
-    def _apply_command(self, command, components):
+    def _apply_command(self, command, components, **kwargs):
         failed = []
         for component_uid in components:
             try:
-                status = command(component_uid)
+                status = command(component_uid, **kwargs)
                 print "\t{0:<30}\t{1}".format(component_uid, "OK" if status else "Skipped")
             except:
                 print "\t{0:<30}\tFailed".format(component_uid)
@@ -258,13 +252,6 @@ class ComponentManagerShell(cmd.Cmd):
             return 1
 
     # utility function
-    def _apply_params_to_config(self, params, components):
-        for component_uid in components:
-            if component_uid in self._manager.components:
-                component_cfg = self._manager.components[component_uid].configuration
-                if ("-a" in params) or ("--arguments" in params):
-                    component_cfg.command_args = params["-a"]
-
     def _format_parameter(self, key, value, default = ""):
         if isinstance(value, (list, tuple, set)):
             return ", ".join(str(e) for e in value)
@@ -348,8 +335,7 @@ class ComponentManagerShell(cmd.Cmd):
     @_multiple_components_allowed
     def do_start(self, components, params):
         print "Starting components..."
-        self._apply_params_to_config(params, components)
-        return self._apply_command(self._manager.start, components)
+        return self._apply_command(self._manager.start, components, **params)
 
     @_error_handler
     @_multiple_components_allowed
@@ -365,8 +351,7 @@ class ComponentManagerShell(cmd.Cmd):
     @_single_component_allowed
     def do_console(self, component, params):
         print "Starting interactive console..."
-        self._apply_params_to_config(params, [component])
-        return 0 if self._manager.console(component) else 1
+        return 0 if self._manager.console(component, **params) else 1
 
     @_error_handler
     @_multiple_components_allowed
