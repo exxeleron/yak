@@ -52,6 +52,62 @@ class package(Command):
         shutil.move(archived, package)
 
 
+class bbfreeze(Command):
+    description = "bbfreeze wrapper"
+    user_options = [("name=", "n", "name"),
+                    ("version=", "v", "version"),
+                    ("platform=", "p", "platform suffix"),
+                    ]
+
+    def initialize_options(self):
+        self.include_py = False
+        self.name = None
+        self.version = None
+        self.platform = None
+        self.app_name = None
+        self.includes = None
+        self.excludes = None
+        self.extra_libs = None
+        self.data_files = None
+        self.dist_dir = None
+
+    def finalize_options(self):
+        from distutils.util import get_platform
+        self.name = self.name if self.name else self.distribution.metadata.name
+        self.version = self.version if self.version else self.distribution.metadata.version
+        self.platform = self.platform if self.platform else get_platform()
+        self.app_name = "%s-%s-%s" % (self.name, self.version, self.platform)
+        self.includes = self.includes if self.includes else ()
+        self.excludes = self.excludes if self.excludes else ()
+        self.extra_libs = self.extra_libs if self.extra_libs else []
+        self.data_files = self.data_files if self.data_files else []
+        self.dist_dir = self.dist_dir if self.dist_dir else os.path.join("dist", self.name)
+
+    def run(self):
+        from bbfreeze import Freezer
+        freezer = Freezer(distdir = self.dist_dir,
+                          includes = self.includes,
+                          excludes = self.excludes)
+        freezer.include_py = self.include_py
+
+        if self.distribution.scripts:
+            for script in self.distribution.scripts:
+                freezer.addScript(script, gui_only = False)
+
+        # execute freeze
+        freezer()
+        # include extra libs - hack for Unix
+        if self.extra_libs:
+            print "extra_libs: ", self.extra_libs
+            for lib in self.extra_libs:
+                shutil.copy(lib, self.dist_dir)
+        # include data_files
+        if self.data_files:
+            print "data_files: ", self.data_files
+            for df in self.data_files:
+                shutil.copy(df, self.dist_dir)
+        
+
 class imprint(Command):
     description = "imprint application scripts"
     user_options = [("tstamp=", "t", "tstamp"),
@@ -107,6 +163,7 @@ setup(
     url = "http://www.devnet.de/exxeleron/enterprise-components/",
 
     cmdclass = {"package": package,
+                "freeze": bbfreeze,
                 "imprint": imprint,
                },
     
@@ -114,4 +171,8 @@ setup(
      
     scripts = ["scripts/yak.py"],
     py_modules = [],
+    
+    options = {"freeze": dict(data_files = ["scripts/yak_complete_bash.sh"],
+                              ),
+               },
 )

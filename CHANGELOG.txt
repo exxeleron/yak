@@ -2,8 +2,7 @@
   yak 3.1.0 [TBA]
 ------------------------------------------------------------------------------
   
-  - Change application packaging to PyInstaller
-  - Experimental: Mac OS X support
+  - Experimental: Mac OS X support (via PyInstaller)
   - Introduce command aliases
   - Add inversion modifier for listing components and/or groups
   - Add utc/local switch (timestampMode flag) for stamping start/stop times

@@ -38,28 +38,29 @@ To brand using values defined in `setup.py` execute:
 
 Version and timestamp values can be ovverriden from command line: 
 
-`python setup.py imprint --version=3.0.0 --tstamp=20140415114830`.
+`python setup.py imprint --version=3.1.0 --tstamp=20141208091715`.
 
 
 #### Freezing application
 
-Executable version of the yak is created with the [pyinstaller](http://www.pyinstaller.org/) tool.
+Depending on target platform, executable version of the yak is created with:
+ - the [bbfreeze](https://pypi.python.org/pypi/bbfreeze) on 
+ - the [pyinstaller](http://www.pyinstaller.org/) tool on Mac OS X
 
 Requirements:
- - pyinstaller package installed
+ - bbfreeze or pyinstaller package installed
 
 Instructions:
 
 Execute:
 
-  `pyinstaller yak.spec`
+  `python setup.py freeze`
   
 or:
 
-  `pyinstaller yak-win.spec` on Windows platform
+  `pyinstaller yak-win.spec` on Mac OS X platform
 
 Binary distribution is being built to directory: `dist/yak`.
-
 
 #### Packaging application
 
@@ -80,7 +81,7 @@ Instructions:
 #### Requirements
 
  - Python 2.7 (Python 2.6 can be used if ordereddict package is installed)
- - pyinstaller 2.1
+ - bbfreeze 1.1.2 or pyinstaller 2.1
  - configobj 5.0.4
  - psutil 1.2.1
  - pywin32 (required on: windows) 
@@ -89,6 +90,7 @@ Instructions:
 Required libraries can be conveniently installed using [pip](https://pypi.python.org/pypi/pip).
 Execute: 
 
-`pip install -r requirements.txt` to install dependencies.
+`pip install -r requirements.txt` to install dependencies on Linux and Windows.
+`pip install -r requirements-osx.txt` to install dependencies on Mac OS X.
 
 Note that this does not install additional Windows dependencies.
