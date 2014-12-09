@@ -58,7 +58,7 @@ Execute:
   
 or:
 
-  `pyinstaller yak-win.spec` on Mac OS X platform
+  `pyinstaller yak.spec` on Mac OS X platform
 
 Binary distribution is being built to directory: `dist/yak`.
 
