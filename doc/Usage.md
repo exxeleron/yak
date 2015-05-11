@@ -64,6 +64,7 @@ In order to configure `yak` paths (log directories or system location) command l
 | <pre>-v VIEWER</pre> <pre>--viewer=VIEWER</pre>  |               | external viewer/pager
 | <pre>-d DELIM</pre> <pre>--delimiter=DELIM</pre> | padded spaces | delimiter for the info command
 | <pre>-f FORMAT</pre> <pre>--format=FORMAT</pre>  | [see below]   | format for the info command
+| <pre>-F STATUS</pre> <pre>--filter=STATUS</pre>  | empty         | filter info result by component status
 | <pre>-A ALIAS</pre> <pre>--alias=ALIAS</pre>     |               | define command alias
 | <pre>-a ARGS</pre> <pre>--arguments=ARGS</pre>   | empty         | additional arguments for the processes (valid for `start`, `restart` and `console` commands)
 
@@ -90,6 +91,13 @@ Each component inside yak is assigned with status attribute:
 | `WSFULL`     | q only. If file with STDERR redirection is non-empty and finishes with one of the following: wsfull or -w abort.
 
 
+Output from the `info` command can be filtered based on component status via command line parameter `-F / --filter`.
+
+```bash
+yak info -F RUNNING#DISTURBED
+```
+
+
 ### Command aliases
 
 Command aliases allow user to chain multiple commands and bind these with a custom name. Alias is declared and defined via command line parameter `-A / --alias`.
@@ -98,6 +106,12 @@ For example: user can define a `restart_console` command, which stops and restar
 
 ```bash
 yak --alias restart_console "stop, console"
+```
+
+Define a `info_dt` alias, which only show information about components with status DISTURBED or TERMINATED:
+
+```bash
+yak --alias info_dt "info -F DISTURBED#TERMINATED"
 ```
 
 For convenience, command aliases can be set via `YAK_OPTS` environmental variable. For example:

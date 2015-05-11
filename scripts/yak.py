@@ -82,13 +82,15 @@ class ComponentManagerShell(cmd.Cmd):
 
         if options.alias:
             for alias, commands in options.alias.iteritems():
-                command_functions = []
-                for c in commands:
+                alias_eval = []
+                for cmd_alias in commands:
+                    cmd_alias = shlex.split(cmd_alias)
+                    c = cmd_alias[0]
                     if hasattr(self, "do_" + c):
-                        command_functions.append(getattr(self, "do_" + c))
+                        alias_eval.append(getattr(self, "do_" + c))
                     else:
                         raise ComponentManagerShellError("Alias: '{0}' refers to unknown command: '{1}'".format(alias, c))
-                setattr(self, "do_" + alias, partial(self._evaluate_alias, command_functions))
+                setattr(self, "do_" + alias, partial(self._evaluate_alias, alias_eval, " ".join(cmd_alias[1:])))
 
     def _parse_format(self, formating, delimiter):
         r = re.compile("\d+")
@@ -145,14 +147,12 @@ class ComponentManagerShell(cmd.Cmd):
     def _opt_parser(self):
         opt_parser = OptionParser()
         opt_parser.add_option("-a", "--arguments", default = None)
+        opt_parser.add_option("-F", "--filter", default = None)
         return opt_parser
 
-    def _get_components_list_and_params(self, args):
+    def _get_components_list(self, identifiers):
         components = []
         ignored_components = set()
-
-        (params, identifiers) = self._opt_parser.parse_args(args = shlex.split(args))
-        params = vars(params)
 
         if len(identifiers) > 0:
             for id in identifiers:
@@ -188,35 +188,7 @@ class ComponentManagerShell(cmd.Cmd):
 
             # remove duplicates, restore runtime order, remove ignored components
             components = [s for s in self._manager.dependencies_order if s in components and s not in ignored_components]
-        return components, params
-
-    def _allow_empty_components_list(f):  # @NoSelf
-        def expand_to_all_components(self, args):
-            if args:
-                return f(self, args)
-            else:
-                return f(self, "*")
-        return expand_to_all_components
-
-    def _multiple_components_allowed(f):  # @NoSelf
-        def multi_components_command(self, args):
-            if args:
-                ComponentManagerShell.logger.info("%s %s", f.func_name[3:], args, extra = {"user": get_username()})
-                self._manager.reload()
-                return f(self, *self._get_components_list_and_params(args))
-            else:
-                raise ComponentManagerShellError("Command: '{0}' requires group, namespace or component id(s)".format(f.__name__[3:]))
-        return multi_components_command
-
-    def _single_component_allowed(f):  # @NoSelf
-        def single_component_command(self, arg):
-            ComponentManagerShell.logger.info("%s %s", f.func_name[3:], arg, extra = {"user": get_username()})
-            components, params = self._get_components_list_and_params(arg)
-            if len(components) != 1:
-                raise ComponentManagerShellError("Command: '{0}' can only be performed on single component".format(f.__name__[3:]))
-            self._manager.reload()
-            return f(self, components[0], params)
-        return single_component_command
+        return components
 
     def _error_handler(f):  # @NoSelf
         def tracked_command(self, args):
@@ -227,6 +199,41 @@ class ComponentManagerShell(cmd.Cmd):
                 ComponentManagerShell.logger.error(get_full_exc_info(), extra = {"user": get_username()})
                 return 1
         return tracked_command
+
+    def _cmd_line_split(f):  # @NoSelf
+        def line_split(self, args):
+            (params, identifiers) = self._opt_parser.parse_args(args = shlex.split(args))
+            params = vars(params)
+            f(self, identifiers, params)
+        return line_split
+
+    def _allow_empty_components_list(f):  # @NoSelf
+        def expand_to_all_components(self, identifiers, params):
+            if identifiers:
+                return f(self, identifiers, params)
+            else:
+                return f(self, ["*"], params)
+        return expand_to_all_components
+
+    def _multiple_components_allowed(f):  # @NoSelf
+        def multi_components_command(self, identifiers, params):
+            if identifiers:
+                ComponentManagerShell.logger.info("%s %s %s", f.func_name[3:], identifiers, params, extra = {"user": get_username()})
+                self._manager.reload()
+                return f(self, self._get_components_list(identifiers), params)
+            else:
+                raise ComponentManagerShellError("Command: '{0}' requires group, namespace or component id(s)".format(f.__name__[3:]))
+        return multi_components_command
+
+    def _single_component_allowed(f):  # @NoSelf
+        def single_component_command(self, identifiers, params):
+            ComponentManagerShell.logger.info("%s %s %s", f.func_name[3:], identifiers, params, extra = {"user": get_username()})
+            components = self._get_components_list(identifiers)
+            if len(components) != 1:
+                raise ComponentManagerShellError("Command: '{0}' can only be performed on single component".format(f.__name__[3:]))
+            self._manager.reload()
+            return f(self, components[0], params)
+        return single_component_command
 
     # utility functions
     def _apply_command(self, command, components, **kwargs):
@@ -269,9 +276,9 @@ class ComponentManagerShell(cmd.Cmd):
         return value
 
     # shell commands
-    def _evaluate_alias(self, commands, args):
+    def _evaluate_alias(self, commands, params, args):
         for command in commands:
-            ret_val = command(args)
+            ret_val = command("{0} {1}".format(args, params) if params else args)
             if ret_val:
                 return ret_val
 
@@ -305,18 +312,23 @@ class ComponentManagerShell(cmd.Cmd):
         sys.exit(0)
 
     @_error_handler
+    @_cmd_line_split
     @_allow_empty_components_list
     @_multiple_components_allowed
     def do_info(self, components, params):
+        status_filter = params["filter"].upper().split("#") if params["filter"] else None
+        
         print self._info_header
         for component_uid in sorted(components):
             parameters = dict()
             component = self._manager.components[component_uid]
-            for attr in self._info_parameters:
-                parameters[attr] = self._format_parameter(attr, getattr(component, to_underscore(attr).lower(), ""), "")
-            print self._info_format.format(**parameters)
+            if not status_filter or component.status in status_filter:
+                for attr in self._info_parameters:
+                    parameters[attr] = self._format_parameter(attr, getattr(component, to_underscore(attr).lower(), ""), "")
+                print self._info_format.format(**parameters)
 
     @_error_handler
+    @_cmd_line_split
     @_multiple_components_allowed
     def do_details(self, components, params):
         print HLINE
@@ -332,12 +344,14 @@ class ComponentManagerShell(cmd.Cmd):
             print HLINE
 
     @_error_handler
+    @_cmd_line_split
     @_multiple_components_allowed
     def do_start(self, components, params):
         print "Starting components..."
         return self._apply_command(self._manager.start, components, **params)
 
     @_error_handler
+    @_cmd_line_split
     @_multiple_components_allowed
     def do_stop(self, components, params):
         print "Stopping components..."
@@ -348,28 +362,33 @@ class ComponentManagerShell(cmd.Cmd):
         return retval if retval else self.do_start(args)
 
     @_error_handler
+    @_cmd_line_split
     @_single_component_allowed
     def do_console(self, component, params):
         print "Starting interactive console..."
         return 0 if self._manager.console(component, **params) else 1
 
     @_error_handler
+    @_cmd_line_split
     @_multiple_components_allowed
     def do_interrupt(self, components, params):
         print "Interrupting components..."
         return self._apply_command(self._manager.interrupt, reversed(components))
 
     @_error_handler
+    @_cmd_line_split
     @_single_component_allowed
     def do_out(self, component, params):
         return show_file(self._manager.components[component].stdout)
 
     @_error_handler
+    @_cmd_line_split
     @_single_component_allowed
     def do_err(self, component, params):
         return show_file(self._manager.components[component].stderr)
 
     @_error_handler
+    @_cmd_line_split
     @_single_component_allowed
     def do_log(self, component, params):
         return show_file(self._manager.components[component].log)
@@ -407,6 +426,7 @@ def get_opt_parser():
     opt_parser.add_option("-v", "--viewer", help = "external viewer")
     opt_parser.add_option("-d", "--delimiter", help = "column delimiter for the info command [default: padded spaces]", default = " ")
     opt_parser.add_option("-f", "--format", help = "display format for info command", default = "uid:18#pid:5#port:6#status:11#started:19#stopped:19")
+    opt_parser.add_option("-F", "--filter", help = "status filter for info command", default = "")
     opt_parser.add_option("-A", "--alias", help = "define command alias e.g.: --alias restart_console \"stop, console\"", action = "callback", callback = define_aliases, nargs = 2, type = "str")
     opt_parser.add_option("-a", "--arguments", help = "additional arguments passed to process - valid only for 'start', 'restart' and 'console' commands", default = "")
     return opt_parser
@@ -457,7 +477,7 @@ if __name__ == "__main__":
         if len(args) == 0:
             exit_status = shell.cmdloop()
         elif len(args) >= 1:
-            exit_status = shell.onecmd(" ".join(args) + (" -a \"" + options.arguments + "\""  if options.arguments else ""))
+            exit_status = shell.onecmd(" ".join(args) + (" -a \"" + options.arguments + "\""  if options.arguments else "") + (" -F \"" + options.filter + "\""  if options.filter else ""))
     except (SystemExit, KeyboardInterrupt):
         exit_status = 0
     except:
