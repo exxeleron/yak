@@ -87,10 +87,10 @@ class ComponentManagerShell(cmd.Cmd):
                     cmd_alias = shlex.split(cmd_alias)
                     c = cmd_alias[0]
                     if hasattr(self, "do_" + c):
-                        alias_eval.append(getattr(self, "do_" + c))
+                        alias_eval.append((getattr(self, "do_" + c), " ".join(cmd_alias[1:])))
                     else:
                         raise ComponentManagerShellError("Alias: '{0}' refers to unknown command: '{1}'".format(alias, c))
-                setattr(self, "do_" + alias, partial(self._evaluate_alias, alias_eval, " ".join(cmd_alias[1:])))
+                setattr(self, "do_" + alias, partial(self._evaluate_alias, alias_eval))
 
     def _parse_format(self, formating, delimiter):
         r = re.compile("\d+")
@@ -276,9 +276,9 @@ class ComponentManagerShell(cmd.Cmd):
         return value
 
     # shell commands
-    def _evaluate_alias(self, commands, params, args):
+    def _evaluate_alias(self, commands, args):
         for command in commands:
-            ret_val = command("{0} {1}".format(args, params) if params else args)
+            ret_val = command[0]("{0} {1}".format(args, command[1]) if len(command) > 1 else args)
             if ret_val:
                 return ret_val
 
@@ -306,6 +306,7 @@ class ComponentManagerShell(cmd.Cmd):
         print "  %-10s %s" % ("quit", "exits the interactive shell")
         print ""
         print "  %-10s %s" % ("-a", "allows start/restart process with extra arguments")
+        print "  {0:10} {1}".format("-F", "filter info output by components status")
 
     def do_quit(self, args):
         print self.outro
