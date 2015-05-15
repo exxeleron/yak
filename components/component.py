@@ -83,7 +83,7 @@ class TimestampMode:
             return getattr(TimestampMode, name.upper())
         except:
             raise AttributeError("Invalid timestampMode: " + name)
-        
+
 
 class Status(object):
     DISTURBED = "DISTURBED"
@@ -106,7 +106,7 @@ class Component(object):
     def __init__(self, uid, **kwargs):
         self.uid = str(uid)
         self.configuration = kwargs.get("configuration")
-        
+
         self._status_persistance = kwargs.get("status_persistance")
 
         self.stdenv = None
@@ -118,7 +118,7 @@ class Component(object):
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
-    
+
     def timestamp(self):
         return dt.utcnow() if self.configuration.timestamp_mode == TimestampMode.UTC else dt.now()
 
@@ -140,16 +140,21 @@ class Component(object):
             os.makedirs(self.log_path)
 
         if init_std_paths:
-            self.stdout = os.path.join(self.log_path, "{0}_{1}.out".format(self.uid, tstamp))
-            self.stderr = os.path.join(self.log_path, "{0}_{1}.err".format(self.uid, tstamp))
-            self.stdenv = os.path.join(self.log_path, "{0}_{1}.env".format(self.uid, tstamp))
+            if not self.configuration.silent:
+                self.stdout = os.path.join(self.log_path, "{0}_{1}.out".format(self.uid, tstamp))
+                self.stderr = os.path.join(self.log_path, "{0}_{1}.err".format(self.uid, tstamp))
+                self.stdenv = os.path.join(self.log_path, "{0}_{1}.env".format(self.uid, tstamp))
+            else:
+                self.stdout = os.devnull
+                self.stderr = os.devnull
+                self.stdenv = os.devnull
 
     def _bootstrap_environment(self):
         env = os.environ.copy()
         env.update(self.configuration.vars)
         env.update(self.configuration.env)
 
-        if self.stdenv:
+        if self.stdenv and not self.configuration.silent:
             with open(self.stdenv, "w") as f:
                 for key in env.keys():
                     f.write("{0}: {1}\n".format(key, env[key]))
@@ -161,24 +166,26 @@ class Component(object):
             osutil.set_affinity(os.getpid(), self.configuration.cpu_affinity)
 
         self.executed_cmd = str(self.configuration.full_cmd)
-        p = osutil.execute(cmd = shlex.split(self.configuration.full_cmd, posix = False),
-                           stdout = open(self.stdout, "w"),
-                           stderr = open(self.stderr, "w"),
-                           bin_path = self.configuration.bin_path,
-                           env = self._bootstrap_environment()
-                           )
-        self.pid = p.pid
+        with open(self.stdout, "w") as stdout:
+            with open(self.stderr, "w") as stderr:
+                p = osutil.execute(cmd = shlex.split(self.configuration.full_cmd, posix = False),
+                                   stdout = stdout,
+                                   stderr = stderr,
+                                   bin_path = self.configuration.bin_path,
+                                   env = self._bootstrap_environment()
+                                   )
+                self.pid = p.pid
 
-        if self.configuration.start_wait:
-            if self.configuration.start_wait > 0:
-                time.sleep(self.configuration.start_wait)
-                if p.poll():
-                    self.pid = None
-                    raise ComponentError("Component {0} finished prematurely with code {1}".format(self.uid, p.returncode))
-            else:
-                p.wait()
-                self.pid = None
-                self.stopped = self.timestamp()
+                if self.configuration.start_wait:
+                    if self.configuration.start_wait > 0:
+                        time.sleep(self.configuration.start_wait)
+                        if p.poll():
+                            self.pid = None
+                            raise ComponentError("Component {0} finished prematurely with code {1}".format(self.uid, p.returncode))
+                    else:
+                        p.wait()
+                        self.pid = None
+                        self.stopped = self.timestamp()
 
     def interactive(self):
         if self.configuration.cpu_affinity:
@@ -191,11 +198,11 @@ class Component(object):
                              )
         self.pid = p.pid
         self.save_status()
-        
+
         p.communicate()
 
         self.stopped = self.timestamp()
-        
+
         if p.returncode:
             raise ComponentError("Component {0} finished prematurely with code {1}".format(self.uid, p.returncode))
 
@@ -230,7 +237,7 @@ class Component(object):
     def status(self):
         """Returns status of a component"""
         if self.is_alive:
-            return Status.RUNNING if osutil.is_empty(self.stderr) else Status.DISTURBED
+            return Status.RUNNING if self.configuration.silent or osutil.is_empty(self.stderr) else Status.DISTURBED
         elif not self.started or self.stopped:
             self.pid = None
             return Status.STOPPED
@@ -288,7 +295,7 @@ class ComponentConfiguration(object):
     """
 
     typeid = "cmd"
-    attrs = ["uid", "full_cmd", "requires", "command", "command_args", "bin_path", "data_path", "log_path", "cpu_affinity", "start_wait", "stop_wait", "sys_user", "timestamp_mode"]
+    attrs = ["uid", "full_cmd", "requires", "command", "command_args", "bin_path", "data_path", "log_path", "cpu_affinity", "start_wait", "stop_wait", "sys_user", "timestamp_mode", "silent"]
 
     def __init__(self, uid, **kwargs):
         self.uid = "{0}.{1}".format(*uid) if len(uid) <= 2 else "{0}.{1}_{2}".format(*uid)
@@ -417,6 +424,7 @@ class ComponentConfiguration(object):
         self.sys_user = self._get_list("sysUser", cfg)
         self.command_args = self._get_value("commandArgs", cfg)
         self.timestamp_mode = TimestampMode.from_string(self._get_value("timestampMode", cfg, "utc"))
+        self.silent = self._bool_(self._get_value("silent", cfg, False))
 
         self.env = self._get_env_vars_list(cfg)
 
