@@ -268,12 +268,14 @@ class Component(object):
     @property
     def mem_rss(self):
         """Returns rss memory used by a component"""
-        return osutil.get_memory_rss(self.pid) / 1024 if self.status in running_statuses else 0
+        memrss = osutil.get_memory_rss(self.pid)
+        return memrss / 1024 if self.status in running_statuses and memrss else 0
 
     @property
     def mem_vms(self):
         """Returns vms memory used by a component"""
-        return osutil.get_memory_vms(self.pid) / 1024 if self.status in running_statuses else 0
+        memvms = osutil.get_memory_vms(self.pid)
+        return memvms / 1024 if self.status in running_statuses and memvms else 0
 
     @staticmethod
     def create_instance(typeid, uid, configuration = None, **kwargs):
