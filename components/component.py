@@ -217,9 +217,6 @@ class Component(object):
 
     def save_status(self):
         """Saves component status in the status file"""
-        print [getattr(self, attr) for attr in ["uid", "typeid", "pid", "executed_cmd",
-                         "log", "stdout", "stderr", "stdenv",
-                         "started", "started_by", "stopped", "stopped_by"]]
         if self._status_persistance:
             self._status_persistance.save_status(self)
 
@@ -269,13 +266,13 @@ class Component(object):
     def mem_rss(self):
         """Returns rss memory used by a component"""
         memrss = osutil.get_memory_rss(self.pid)
-        return memrss / 1024 if self.status in running_statuses and memrss else 0
+        return memrss / 1024 if self.status in running_statuses and isinstance(memrss, (int, long)) else 0
 
     @property
     def mem_vms(self):
         """Returns vms memory used by a component"""
         memvms = osutil.get_memory_vms(self.pid)
-        return memvms / 1024 if self.status in running_statuses and memvms else 0
+        return memvms / 1024 if self.status in running_statuses and isinstance(memvms, (int, long)) else 0
 
     @staticmethod
     def create_instance(typeid, uid, configuration = None, **kwargs):
