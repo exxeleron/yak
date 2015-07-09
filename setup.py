@@ -117,6 +117,7 @@ class imprint(Command):
     def initialize_options(self):
         self.tstamp = None
         self.version = None
+        self.files = []
 
     def finalize_options(self):
         from datetime import datetime
@@ -129,7 +130,7 @@ class imprint(Command):
     def run(self):
         metadata = self.distribution.metadata
 
-        if self.distribution.scripts:
+        if self.files:
             imprint_pt = re.compile(r"IMPRINT.+### imprint ###")
 
             imprint = dict()
@@ -140,7 +141,7 @@ class imprint(Command):
             for key, value in imprint.iteritems():
                 print "\t{0:10}: {1}".format(key, value)
 
-            for script in self.distribution.scripts:
+            for script in self.files:
                 imprint["script"] = os.path.basename(script).split(".")[0]
                 script_copy = script + "~"
                 shutil.move(script, script_copy)
@@ -153,7 +154,7 @@ class imprint(Command):
 
 setup(
     name = "yak",
-    version = os.environ.get("version", "3.1.2"),
+    version = os.environ.get("version", "3.1.3"),
     description = "process components for enterprise components",
 
     license = "Apache License Version 2.0",
@@ -174,5 +175,6 @@ setup(
     
     options = {"freeze": dict(data_files = ["scripts/yak_complete_bash.sh"],
                               ),
+               "imprint": dict(files = ["scripts/yak.py", "components/version.py"]),
                },
 )

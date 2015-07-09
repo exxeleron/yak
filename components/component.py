@@ -32,6 +32,7 @@ from string import Template
 import osutil
 
 from components import ComponentManagerError
+from components import version
 from components.utils import to_underscore
 
 
@@ -151,6 +152,7 @@ class Component(object):
 
     def _bootstrap_environment(self):
         env = os.environ.copy()
+        env["ECM_VERSION"] = version.__version__
         env.update(self.configuration.vars)
         env.update(self.configuration.env)
 
