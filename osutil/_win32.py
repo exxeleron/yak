@@ -63,5 +63,3 @@ def get_command_line(pid):
     except psutil.NoSuchProcess:
         pass
 
-def open_mmap(fileno):
-    return mmap.mmap(fileno, 0, None, mmap.ACCESS_READ)

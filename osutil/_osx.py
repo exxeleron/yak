@@ -79,9 +79,6 @@ def get_command_line(pid):
     except (psutil.NoSuchProcess, psutil.AccessDenied):
         return None
 
-def open_mmap(fileno):
-    return mmap.mmap(fileno, 0, prot = mmap.PROT_READ)
-
 def set_affinity(pid, cpus):
     pass
 

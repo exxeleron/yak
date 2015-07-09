@@ -55,6 +55,9 @@ else:
 def is_empty(path):
     return (not path) or (os.path.isfile(path) and os.stat(path).st_size == 0)
 
+def file_size(path):
+    return os.stat(path).st_size if path and os.path.isfile(path) else 0
+
 
 # generic from psutil
 def get_cpu_sys(pid):
