@@ -53,6 +53,7 @@ class TestConfiguration(unittest.TestCase):
                                                               kdb_user = "username",
                                                               kdb_password = "p@ssw0rd",
                                                               timestamp_mode = TimestampMode.UTC,
+                                                              silent = False,
                                                               ),),
                            ("core.rdb", QComponentConfiguration(tuple(("core", "rdb")),
                                                               command = "q rdb.q",
@@ -71,6 +72,7 @@ class TestConfiguration(unittest.TestCase):
                                                               kdb_user = "username",
                                                               kdb_password = "p@ssw0rd",
                                                               timestamp_mode = TimestampMode.UTC,
+                                                              silent = False,
                                                               ),),
                            ("core.monitor", ComponentConfiguration(tuple(("core", "monitor")),
                                                                  command = "python monitor.py",
@@ -83,6 +85,7 @@ class TestConfiguration(unittest.TestCase):
                                                                  sys_user = ["tcore", "root"],
                                                                  cpu_affinity = [0, 1],
                                                                  timestamp_mode = TimestampMode.UTC,
+                                                                 silent = False,
                                                                  ),),
                            ("cep.cep_7", QComponentConfiguration(tuple(("cep", "cep_7")),
                                                                command = "q cep.q",
@@ -103,6 +106,7 @@ class TestConfiguration(unittest.TestCase):
                                                                u_opt = "U",
                                                                u_file = "optfile",
                                                                timestamp_mode = TimestampMode.UTC,
+                                                               silent = False,
                                                                ),),
                            ("cep.python", ComponentConfiguration(tuple(("cep", "python")),
                                                                 command = "python",
@@ -114,6 +118,7 @@ class TestConfiguration(unittest.TestCase):
                                                                 stop_wait = 1,
                                                                 sys_user = [],
                                                                 timestamp_mode = TimestampMode.UTC,
+                                                                silent = True,
                                                                 cpu_affinity = [],))]
                           )
 
