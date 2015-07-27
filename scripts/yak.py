@@ -38,7 +38,7 @@ except ImportError:  # python < 2.7 -> try to import ordereddict
 
 
 
-IMPRINT = {'script': 'yak', 'tstamp': '20150710145918', 'version': '3.1.3', 'name': 'yak', 'author': 'exxeleron'} ### imprint ###
+IMPRINT = {'script': 'yak', 'tstamp': '20150731130246', 'version': '3.2.0rc1', 'name': 'yak', 'author': 'exxeleron'} ### imprint ###
 ROOT_DIR = os.path.dirname(sys.path[0])
 VIEWER = None
 HLINE = "-" * 80
@@ -237,24 +237,33 @@ class ComponentManagerShell(cmd.Cmd):
 
     # utility functions
     def _apply_command(self, command, components, **kwargs):
-        failed = []
-        for component_uid in components:
-            try:
-                status = command(component_uid, **kwargs)
-                print "\t{0:<30}\t{1}".format(component_uid, "OK" if status else "Skipped")
-            except:
-                print "\t{0:<30}\tFailed".format(component_uid)
-                failed.append((component_uid, get_short_exc_info()))
-                ComponentManagerShell.logger.error(get_full_exc_info(), extra = {"user": get_username()})
+        failed = False
 
-        if failed:
-            for component_uid, exc_info in failed:
+        def status_callback(component_uid, status):
+            if status is None:
+                print "\t{0:<30}\t.".format(component_uid)
+            elif not isinstance(status, Exception):
+                print "\t{0:<30}\t{1}".format(component_uid, "OK" if status else "Skipped")
+            else:
+                print "\t{0:<30}\tFailed".format(component_uid)
+                ComponentManagerShell.logger.error(get_full_exc_info(), extra = {"user": get_username()})
+                
+        def pause_callback(delay):
+            if delay and delay >= 1.0:
+                print "  Waiting for: {0}s".format(delay)
+                    
+        status_summary = command(components, callback = status_callback, pause_callback = pause_callback, **kwargs)
+
+        for component_uid, status in status_summary:
+            if isinstance(status, Exception):
+                failed = True
                 print HLINE
                 print "Failed to start: {0}".format(component_uid)
-                print exc_info
+                print status
                 print "\nCaptured stderr:"
                 show_file(self._manager.components[component_uid].stderr, True)
 
+        if failed:
             print HLINE
             return 1
 
@@ -356,7 +365,7 @@ class ComponentManagerShell(cmd.Cmd):
     @_multiple_components_allowed
     def do_stop(self, components, params):
         print "Stopping components..."
-        return self._apply_command(self._manager.stop, reversed(components))
+        return self._apply_command(self._manager.stop, list(reversed(components)))
 
     def do_restart(self, args):
         retval = self.do_stop(args)
@@ -374,7 +383,7 @@ class ComponentManagerShell(cmd.Cmd):
     @_multiple_components_allowed
     def do_interrupt(self, components, params):
         print "Interrupting components..."
-        return self._apply_command(self._manager.interrupt, reversed(components))
+        return self._apply_command(self._manager.interrupt, list(reversed(components)))
 
     @_error_handler
     @_cmd_line_split

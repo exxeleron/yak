@@ -15,13 +15,11 @@
 #
 
 import signal
-import time
 
 import os
 import psutil
 import pwd
 import subprocess
-import mmap
 
 def signal_ignore():
     os.setpgrp()
@@ -42,19 +40,14 @@ def execute(cmd, bin_path, env, stdin = open(os.devnull, "r+"), stdout = None, s
                              preexec_fn = signal_ignore
                              )
 
-def terminate(pid, timeout = None):
+def terminate(pid, force = False):
     if pid:
         try:
             p = psutil.Process(pid)
-            p.terminate()
-
-            if timeout:
-                time.sleep(timeout)
-
-            if p.is_running():
+            if not force:
+                p.terminate()
+            else:
                 p.kill()
-                if timeout:
-                    time.sleep(timeout)
         except psutil.NoSuchProcess, e:
             raise OSError("Failed attempt to terminate process with pid: %s.\n%s" % (pid, e))
 

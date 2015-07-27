@@ -15,6 +15,7 @@
 #
 
 import sys
+import time
 
 from osutil import get_username
 from components.component import ComponentConfiguration, Component, ComponentError, ConfigurationError
@@ -22,6 +23,7 @@ from components.q import QComponent
 from components.status import StatusPersistance
 
 from copy import copy
+from collections import OrderedDict
 
 
 class DependencyError(ComponentError):
@@ -133,7 +135,52 @@ class ComponentManager(object):
             else:
                 self._components[configuration.uid].configuration = configuration
 
-    def start(self, uid, **kwargs):
+    def start(self, components, callback = None, pause_callback = None, **kwargs):
+        """
+        Starts multiple components. If component(s) is already running, nothing happens.
+        @param components: list of identifier of the component
+        @param callback: function to be executed after status of a component has been verified 
+        @param pause_callback: function to be executed after while operation is paused
+        @return: List of: tuples (uid, True if component has been started, False if the component is already running or ComponentError if component cannot be started). 
+        """
+        status = OrderedDict()
+        start_wait = 0
+        check_list = []
+
+        def validate_started():
+            if start_wait > 0 and any(s == True for s in status.values()):
+                if pause_callback:
+                    pause_callback(start_wait)
+                time.sleep(start_wait)
+
+            for component in check_list:
+                try:
+                    self._components[component].check_process()
+                except Exception, e:
+                    status[component] = e
+
+                if callback:
+                    callback(component, status[component])
+
+        for component in components:
+            requires = self._components[component].configuration.requires
+
+            if requires and requires.intersection(check_list) and requires.intersection(components):
+                validate_started()
+                check_list = []
+                start_wait = 0
+
+            try:
+                check_list.append(component)
+                start_wait = max(start_wait, self._components[component].configuration.start_wait)
+                status[component] = self._start(component, **kwargs)
+            except Exception, e:
+                status[component] = e
+
+        validate_started()
+        return status.items()
+
+    def _start(self, uid, **kwargs):
         """
         Starts component with given uid. If component is already running, nothing happens.
         @param uid: identifier of the component 
@@ -165,7 +212,41 @@ class ComponentManager(object):
             if overrides_arguments:
                 component_cfg.command_args = arguments_copy
 
-    def stop(self, uid, **kwargs):
+    def stop(self, components, callback = None, pause_callback = None, **kwargs):
+        """
+        Stops multiple components. If component(s) is not running, nothing happens.
+        @param components: list of identifier of the component
+        @param callback: function to be executed after status of a component has been stopped/killed
+        @param pause_callback: function to be executed after while operation is paused
+        @return: List of: tuples (uid, True if component has been stopped, False if the component is not running or OSError if component cannot be stopped). 
+        """
+        status = OrderedDict()
+        stop_wait = 0
+
+        for component in components:
+            stop_wait = max(stop_wait, self._components[component].configuration.stop_wait)
+            try:
+                status[component] = self._stop(component, **kwargs)
+            except Exception, e:
+                status[component] = e
+
+        if pause_callback:
+            pause_callback(stop_wait)
+        time.sleep(stop_wait)
+
+        for component in components:
+            if self._components[component].is_alive:
+                try:
+                    status[component] = self._stop(component, True, **kwargs)
+                except Exception, e:
+                    status[component] = e
+
+            if callback:
+                callback(component, status[component])
+
+        return status.items()
+
+    def _stop(self, uid, force = False, **kwargs):
         """
         Stops component with given uid. If component is not running, nothing happens.
         @param uid: identifier of the component
@@ -212,7 +293,28 @@ class ComponentManager(object):
             if overrides_arguments:
                 component_cfg.command_args = arguments_copy
 
-    def interrupt(self, uid, **kwargs):
+    def interrupt(self, components, callback = None, pause_callback = None, **kwargs):
+        """
+        Sends interrupt signal to multiple components. If component(s) is not running, nothing happens. (UNIX only)
+        @param components: list of identifier of the component 
+        @param callback: function to be executed after status of a component has been interrupted
+        @param pause_callback: function to be executed after while operation is paused
+        @return: List of: tuples (uid, True if component has been interrupted, False if the component is not running or OSError if component cannot be interrupted). 
+        """
+        status = OrderedDict()
+
+        for component in components:
+            try:
+                status[component] = self._interrupt(component, **kwargs)
+            except Exception, e:
+                status[component] = e
+
+            if callback:
+                callback(component, status[component])
+
+        return status.items()
+
+    def _interrupt(self, uid, **kwargs):
         """
         Sends interrupt signal to component with given uid. If component is not running, nothing happens. (UNIX only)
         @param uid: identifier of the component

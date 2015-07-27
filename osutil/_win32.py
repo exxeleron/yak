@@ -16,7 +16,6 @@
 
 import psutil
 import subprocess
-import mmap
 
 def is_alive(pid):
     if pid:
@@ -33,7 +32,7 @@ def execute(cmd, bin_path, env, stdin = subprocess.PIPE, stdout = None, stderr =
                              env = env
                              )
 
-def terminate(pid, timeout = None):
+def terminate(pid, force = False):
     if pid:
         try:
             p = psutil.Process(pid)

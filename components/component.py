@@ -1,4 +1,3 @@
-#
 #  Copyright (c) 2011-2014 Exxeleron GmbH
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +17,6 @@ import os
 import re
 import shlex
 import subprocess
-import time
 
 try:
     from collections import OrderedDict
@@ -98,7 +96,7 @@ running_statuses = (Status.RUNNING, Status.DISTURBED)
 
 class Component(object):
     """
-    Base class for components objects. Represents single operational system process.
+    Base class for components objects. Represents single operational system _process.
     """
 
     typeid = "cmd"
@@ -107,6 +105,7 @@ class Component(object):
     def __init__(self, uid, **kwargs):
         self.uid = str(uid)
         self.configuration = kwargs.get("configuration")
+        self._process = None
 
         self._status_persistance = kwargs.get("status_persistance")
 
@@ -170,24 +169,24 @@ class Component(object):
         self.executed_cmd = str(self.configuration.full_cmd)
         with open(self.stdout, "w") as stdout:
             with open(self.stderr, "w") as stderr:
-                p = osutil.execute(cmd = shlex.split(self.configuration.full_cmd, posix = False),
-                                   stdout = stdout,
-                                   stderr = stderr,
-                                   bin_path = self.configuration.bin_path,
-                                   env = self._bootstrap_environment()
-                                   )
-                self.pid = p.pid
+                self._process = osutil.execute(cmd = shlex.split(self.configuration.full_cmd, posix = False),
+                                              stdout = stdout,
+                                              stderr = stderr,
+                                              bin_path = self.configuration.bin_path,
+                                              env = self._bootstrap_environment()
+                                              )
+                self.pid = self._process.pid
 
-                if self.configuration.start_wait:
-                    if self.configuration.start_wait > 0:
-                        time.sleep(self.configuration.start_wait)
-                        if p.poll():
-                            self.pid = None
-                            raise ComponentError("Component {0} finished prematurely with code {1}".format(self.uid, p.returncode))
-                    else:
-                        p.wait()
-                        self.pid = None
-                        self.stopped = self.timestamp()
+    def check_process(self):
+        if self._process:
+            if self.configuration.start_wait > 0:
+                if self._process.poll():
+                    self.pid = None
+                    raise ComponentError("Component {0} finished prematurely with code {1}".format(self.uid, self._process.returncode))
+            else:
+                self._process.wait()
+                self.pid = None
+                self.stopped = self.timestamp()
 
     def interactive(self):
         if self.configuration.cpu_affinity:
@@ -208,8 +207,8 @@ class Component(object):
         if p.returncode:
             raise ComponentError("Component {0} finished prematurely with code {1}".format(self.uid, p.returncode))
 
-    def terminate(self):
-        osutil.terminate(self.pid, self.configuration.stop_wait)
+    def terminate(self, force = False):
+        osutil.terminate(self.pid, force)
         self.stopped = self.timestamp()
         self.stopped_by = osutil.get_username()
         self.pid = None
