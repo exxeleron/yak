@@ -1,3 +1,2 @@
 configobj==5.0.4
-psutil==1.2.1
-pyinstaller==2.1
+psutil==3.1.1

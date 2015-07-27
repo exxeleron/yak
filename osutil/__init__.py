@@ -30,14 +30,14 @@ def __nop__(*args):
 def set_affinity(pid, cpus):
     try:
         p = psutil.Process(pid)
-        return p.set_cpu_affinity(cpus)
+        return p.cpu_affinity(cpus)
     except psutil.NoSuchProcess:
         pass
 
 def get_affinity(pid):
     try:
         p = psutil.Process(pid)
-        return p.get_cpu_affinity()
+        return p.cpu_affinity()
     except psutil.NoSuchProcess:
         pass
 
@@ -63,42 +63,42 @@ def file_size(path):
 def get_cpu_sys(pid):
     try:
         p = psutil.Process(pid)
-        return p.get_cpu_times().system
+        return p.cpu_times().system
     except psutil.NoSuchProcess:
         pass
 
 def get_cpu_user(pid):
     try:
         p = psutil.Process(pid)
-        return p.get_cpu_times().user
+        return p.cpu_times().user
     except psutil.NoSuchProcess:
         pass
 
 def get_cpu_percent(pid):
     try:
         p = psutil.Process(pid)
-        return p.get_cpu_percent(interval = None)
+        return p.cpu_percent(interval = None)
     except psutil.NoSuchProcess:
         pass
 
 def get_memory_rss(pid):
     try:
         p = psutil.Process(pid)
-        return p.get_memory_info().rss
+        return p.memory_info().rss
     except psutil.NoSuchProcess:
         pass
 
 def get_memory_vms(pid):
     try:
         p = psutil.Process(pid)
-        return p.get_memory_info().vms
+        return p.memory_info().vms
     except psutil.NoSuchProcess:
         pass
 
 def get_memory_percent(pid):
     try:
         p = psutil.Process(pid)
-        return p.get_memory_percent()
+        return p.memory_percent()
     except psutil.NoSuchProcess:
         pass
 

@@ -75,7 +75,7 @@ def symlink(file, link):
 def get_command_line(pid):
     try:
         p = psutil.Process(pid)
-        return p.cmdline
+        return p.cmdline()
     except psutil.NoSuchProcess:
         pass
 
