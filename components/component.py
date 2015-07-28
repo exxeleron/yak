@@ -225,10 +225,15 @@ class Component(object):
     @property
     def is_alive(self):
         """Returns true if component is alive, false otherwise"""
-        if self.pid and osutil.is_alive(int(self.pid)):
-            cmd = shlex.split(str(self.executed_cmd), posix = False)
-            proc_cmd = self.proc_cmd
-            return not proc_cmd or not cmd or proc_cmd == cmd
+        if self.pid:
+            if osutil.is_alive(int(self.pid)):
+                cmd = shlex.split(str(self.executed_cmd), posix = False)
+                proc_cmd = self.proc_cmd
+                return not proc_cmd or not cmd or proc_cmd == cmd
+            else:
+                self.pid = None
+                self.save_status()
+                return False
         else:
             return False
 
@@ -238,10 +243,8 @@ class Component(object):
         if self.is_alive:
             return Status.RUNNING if self.configuration.silent or osutil.is_empty(self.stderr) else Status.DISTURBED
         elif not self.started or self.stopped:
-            self.pid = None
             return Status.STOPPED
         else:
-            self.pid = None
             return Status.TERMINATED
 
     @property

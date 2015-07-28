@@ -3,6 +3,8 @@
 ------------------------------------------------------------------------------
 
   - psutil library update
+  - Remove stale PID from status file for TERMINATED/STOPPED components 
+    while accessing is_alive property (e.g. info command)
   - Improved performance during components bootstrap/teardown
 
 ------------------------------------------------------------------------------
