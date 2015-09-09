@@ -80,6 +80,8 @@ Parameter | Description
 `binPath` | working directory
 `dataPath` | data directory
 `logPath` | directory for standard output and standard error redirections
+`qPath` | location of the q interpreter (used to determinate between multiple q environments)
+`qHome` | location of the QHOME (used to determinate between multiple q environments)
 
 
 ### Environmental variables
@@ -109,6 +111,9 @@ While starting a component, `yak` saves all the environmental variables in the f
 ```ini
 basePort = 14000
 
+Q32_HOME = /opt/q32/
+Q32_PATH = /opt/q32/l32
+
 [group:core]                          # group declaration
   cpuAffinity = 0, 1
   startWait = 3 
@@ -133,6 +138,10 @@ basePort = 14000
   # define u/U options and user file to use for the group
   uOpt = U 
   uFile = $KDB_ROOT_PATH/data/shared/streams.txt
+  
+  # use 32 bit q version
+  qPath = Q32_PATH
+  qHome = Q32_HOME
 
   [[stream.stream1]]
   type = q:stream/stream
