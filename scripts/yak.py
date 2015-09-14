@@ -38,7 +38,7 @@ except ImportError:  # python < 2.7 -> try to import ordereddict
 
 
 
-IMPRINT = {'script': 'yak', 'tstamp': '20150731130246', 'version': '3.2.0rc1', 'name': 'yak', 'author': 'exxeleron'} ### imprint ###
+IMPRINT = {'script': 'yak', 'tstamp': '20150914082308', 'version': '3.2.0', 'name': 'yak', 'author': 'exxeleron'} ### imprint ###
 ROOT_DIR = os.path.dirname(sys.path[0])
 VIEWER = None
 HLINE = "-" * 80

@@ -1,4 +1,4 @@
-## yak 3.1
+## yak 3.2
 
 yak is an application used to manage Enterprise Components deployed on a single host.
 
