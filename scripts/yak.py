@@ -38,7 +38,7 @@ except ImportError:  # python < 2.7 -> try to import ordereddict
 
 
 
-IMPRINT = {'script': 'yak', 'tstamp': '20150914082308', 'version': '3.2.0', 'name': 'yak', 'author': 'exxeleron'} ### imprint ###
+IMPRINT = {'script': 'yak', 'tstamp': '20151223143450', 'version': '3.2.1', 'name': 'yak', 'author': 'exxeleron'} ### imprint ###
 ROOT_DIR = os.path.dirname(sys.path[0])
 VIEWER = None
 HLINE = "-" * 80
@@ -247,11 +247,11 @@ class ComponentManagerShell(cmd.Cmd):
             else:
                 print "\t{0:<30}\tFailed".format(component_uid)
                 ComponentManagerShell.logger.error(get_full_exc_info(), extra = {"user": get_username()})
-                
+
         def pause_callback(delay):
             if delay and delay >= 1.0:
                 print "  Waiting for: {0}s".format(delay)
-                    
+
         status_summary = command(components, callback = status_callback, pause_callback = pause_callback, **kwargs)
 
         for component_uid, status in status_summary:
@@ -327,7 +327,7 @@ class ComponentManagerShell(cmd.Cmd):
     @_multiple_components_allowed
     def do_info(self, components, params):
         status_filter = params["filter"].upper().split("#") if params["filter"] else None
-        
+
         print self._info_header
         for component_uid in sorted(components):
             parameters = dict()
@@ -344,13 +344,19 @@ class ComponentManagerShell(cmd.Cmd):
         print HLINE
         for component_uid in sorted(components):
             component = self._manager.components[component_uid]
-            config = self._manager.configuration[component_uid]
             print "Component: {0}".format(component_uid)
+
             for attr in component.attrs:
                 print "\t{0:20}\t{1}".format(to_camel_case(attr), self._format_parameter(attr, getattr(component, attr)))
             print "\nConfiguration:"
-            for attr in config.attrs:
-                print "\t{0:20}\t{1}".format(to_camel_case(attr), self._format_parameter(attr, getattr(config, attr)))
+
+            if component_uid in self._manager.configuration:
+                config = self._manager.configuration[component_uid]
+                for attr in config.attrs:
+                    print "\t{0:20}\t{1}".format(to_camel_case(attr), self._format_parameter(attr, getattr(config, attr)))
+            else:
+                print "\t<< Unavailable >>"
+
             print HLINE
 
     @_error_handler

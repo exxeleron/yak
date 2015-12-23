@@ -89,6 +89,7 @@ Each component inside yak is assigned with status attribute:
 | `STOPPED`    | Component has been stopped by the user or component hasn't been started yet.
 | `TERMINATED` | OS process with matching original PID cannot be found and the component hasn't been stopped by the user.
 | `WSFULL`     | q only. If file with STDERR redirection is non-empty and finishes with one of the following: wsfull or -w abort.
+| `DETACHED`  | Component is present in the status file, but the configuration is missing.
 
 
 Output from the `info` command can be filtered based on component status via command line parameter `-F / --filter`.

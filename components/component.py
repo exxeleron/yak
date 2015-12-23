@@ -90,8 +90,9 @@ class Status(object):
     STOPPED = "STOPPED"
     TERMINATED = "TERMINATED"
     WSFULL = "WSFULL"
+    DETACHED = "DETACHED"
 
-running_statuses = (Status.RUNNING, Status.DISTURBED)
+running_statuses = (Status.RUNNING, Status.DISTURBED, Status.DETACHED)
 
 
 class Component(object):
@@ -120,7 +121,7 @@ class Component(object):
         return self.__dict__ == other.__dict__
 
     def timestamp(self):
-        return dt.utcnow() if self.configuration.timestamp_mode == TimestampMode.UTC else dt.now()
+        return dt.utcnow() if self.configuration and self.configuration.timestamp_mode == TimestampMode.UTC else dt.now()
 
     def initialize(self, init_std_paths = True):
         self.started = self.timestamp()

@@ -18,8 +18,9 @@ import sys
 import time
 
 from osutil import get_username
-from components.component import ComponentConfiguration, Component, ComponentError, ConfigurationError
+from components.component import ComponentConfiguration, Component, ComponentError, ConfigurationError, Status
 from components.q import QComponent
+from components.detached import DetachedComponent, DetachedConfiguration
 from components.status import StatusPersistance
 
 from copy import copy
@@ -99,8 +100,8 @@ class ComponentManager(object):
 
     @property
     def dependencies_order(self):
-        """Returns identifiers lists of managed components."""
-        return self._dependency_order
+        """Returns identifiers lists of managed and detached components."""
+        return self._dependency_order + self._detached
 
     @property
     def configuration(self):
@@ -134,11 +135,15 @@ class ComponentManager(object):
                                                                                 configuration = configuration)
             else:
                 self._components[configuration.uid].configuration = configuration
-                
+
+        self._detached = list()
         for uid in self._components:
             if not uid in self._configuration:
                 if not self._components[uid].is_alive:
                     self._persistance.delete_status(uid)
+                else:
+                    self._components[uid] = DetachedComponent(**self._components[uid].__dict__)
+                    self._detached.append(uid)
 
     def start(self, components, callback = None, pause_callback = None, **kwargs):
         """
@@ -193,7 +198,7 @@ class ComponentManager(object):
         @raise ComponentError: if component cannot be started. 
         """
         component = self._components[uid]
-        component_cfg = self._configuration[uid]
+        component_cfg = self._configuration[uid] if uid in self._configuration else dict()
 
         if component.is_alive:
             return False
@@ -229,7 +234,7 @@ class ComponentManager(object):
         stop_wait = 0
 
         for component in components:
-            stop_wait = max(stop_wait, self._components[component].configuration.stop_wait)
+            stop_wait = max(stop_wait, self._components[component].configuration.stop_wait) if self._components[component].configuration else stop_wait
             try:
                 status[component] = self._stop(component, **kwargs)
             except Exception, e:
@@ -278,7 +283,8 @@ class ComponentManager(object):
         @raise ComponentError: if component cannot be started. 
         """
         component = self._components[uid]
-        component_cfg = self._configuration[uid]
+        component_cfg = self._configuration[uid] if uid in self._configuration else dict()
+
         if component.is_alive:
             return False
 
