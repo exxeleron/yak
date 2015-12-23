@@ -2,7 +2,10 @@
 
 `yak` process management tool reads one configuration file: `system.cfg`. Detailed format description can be found in Enterprise Components 3.0 Developers' Documentation.
 
-Top-level elements of `system.cfg` are groups. Each group wraps some number of components’ instances. Instance names are built from namespace identifier and instance id. Configured components can be later referred using group name, namespace, or full instance name.
+***Note:***
+In order to avoid unexpected behaviour, single configuration file has to be used in conjunction with the same status file.
+
+Top-level elements of `system.cfg` are groups. Each group wraps some number of components instances. Instance names are built from namespace identifier and instance id. Configured components can be later referred using group name, namespace, or full instance name.
 
 Example group configuration:
 

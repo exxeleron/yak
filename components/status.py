@@ -53,6 +53,9 @@ class StatusPersistance(object):
     __SELECT_STATUS__ = \
     "SELECT * from components"
 
+    __DELETE_STATUS__ = \
+    "DELETE FROM components WHERE uid = ?"
+
     def __init__(self, statusfile):
         statuspath = os.path.split(statusfile)[0]
         if not os.path.exists(statuspath):
@@ -89,3 +92,7 @@ class StatusPersistance(object):
         self.__conn.execute(self.__UPSERT_STATUS__, data)
         self.__conn.commit()
 
+    def delete_status(self, uid):
+        """Deletes satus od a single component from the status file"""
+        self.__conn.execute(self.__DELETE_STATUS__, [uid])
+        self.__conn.commit()

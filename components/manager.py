@@ -134,6 +134,11 @@ class ComponentManager(object):
                                                                                 configuration = configuration)
             else:
                 self._components[configuration.uid].configuration = configuration
+                
+        for uid in self._components:
+            if not uid in self._configuration:
+                if not self._components[uid].is_alive:
+                    self._persistance.delete_status(uid)
 
     def start(self, components, callback = None, pause_callback = None, **kwargs):
         """
