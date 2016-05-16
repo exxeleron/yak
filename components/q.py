@@ -31,6 +31,8 @@ class QComponent(Component):
     """
 
     typeid = "q"
+    log_file_pattern = re.compile("Logging to file\s*:\s*(?P<path>.+)$")
+    rolled_log_pattern = re.compile("log continues in \s*(?P<path>.+)$", re.MULTILINE)
 
     def __init__(self, uid, **kwargs):
         self._logfile = None
@@ -40,24 +42,27 @@ class QComponent(Component):
         if self.stdout and os.path.exists(self.stdout):
             with open(self.stdout, "r") as stdout:
                 for line in stdout:
-                    match = re.search("Logging to file\s*:\s*(?P<path>.+)$", line)
+                    match = QComponent.log_file_pattern.search(line)
                     if match:
                         return os.path.normpath(match.group("path").strip())
                 return None
 
     def _find_rolled_log(self, path):
-        while path and os.path.exists(path) :
+        LOOKUP_LENGTH = 512
+        while path and os.path.exists(path) and not osutil.is_empty(path):
             with open(path, "r") as stdout:
-                lastLines = stdout.readlines()[-2:]
-                matched = False
-                for line in lastLines :
-                    match = re.search("log continues in \s*(?P<path>.+)$", line)
-                    if match :
-                        path = os.path.normpath(match.group("path").strip())
-                        matched = True
-                        break
-                if not matched :
-                    return path
+                file_size = osutil.file_size(path)
+                lookup_pos = file_size - LOOKUP_LENGTH if file_size > LOOKUP_LENGTH else 0
+                stdout.seek(lookup_pos)
+                log = stdout.read()
+                match = None
+                for match in QComponent.rolled_log_pattern.finditer(log):
+                    pass
+                if match:
+                    path = os.path.normpath(match.group("path").strip())
+                    continue
+            break
+
         return path
 
     def execute(self):
@@ -79,20 +84,20 @@ class QComponent(Component):
         if self.configuration.q_path:
             path = os.environ.get("PATH", "")
             os.environ["PATH"] = self.configuration.q_path + os.pathsep + path
-            
+
         try:
             if self.configuration.cpu_affinity:
                 osutil.set_affinity(os.getpid(), self.configuration.cpu_affinity)
-    
+
             if self.configuration.u_file and not os.path.isfile(self.configuration.u_file):
                 raise ComponentError("Cannot locate uFile: {0}".format(self.configuration.u_file))
-    
+
             env = self._bootstrap_environment()
-    
+
             # overwrite logging configuration for interactive mode
             env["EC_LOG_DEST"] = "FILE,STDERR,CONSOLE"
             env["EC_LOG_LEVEL"] = "DEBUG"
-    
+
             self.executed_cmd = str(self.configuration.full_cmd)
             p = subprocess.Popen(shlex.split(self.configuration.full_cmd, posix = False),
                                  cwd = self.configuration.bin_path,
@@ -100,11 +105,11 @@ class QComponent(Component):
                                  )
             self.pid = p.pid
             super(QComponent, self).save_status()
-    
+
             p.communicate()
-    
+
             self.stopped = super(QComponent, self).timestamp()
-    
+
             if p.returncode:
                 raise ComponentError("Component {0} finished prematurely with code {1}".format(self.uid, p.returncode))
         finally:
@@ -221,4 +226,3 @@ class QBatch(QComponent):
 class QBatchConfiguration(QComponentConfiguration):
     """Batch processes configuration definition. """
     typeid = "b"
-

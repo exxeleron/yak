@@ -1,15 +1,16 @@
 ------------------------------------------------------------------------------
-  yak 3.2.1 [2015.xx.xx]
+  yak 3.2.1 [2016.xx.xx]
 ------------------------------------------------------------------------------
 
   - Handling of detached components
+  - Improve performance: roll log file lookup for q components
 
 ------------------------------------------------------------------------------
   yak 3.2.0 [2015.09.14]
 ------------------------------------------------------------------------------
 
   - psutil library update
-  - Remove stale PID from status file for TERMINATED/STOPPED components 
+  - Remove stale PID from status file for TERMINATED/STOPPED components
     while accessing is_alive property (e.g. info command)
   - Reduced wait time during components bootstrap/teardown
   - Allow to define multiple q runtime environments in system configuration
@@ -27,7 +28,7 @@
   yak 3.1.2 [2015.05.27]
 ------------------------------------------------------------------------------
 
-  - Extend command aliases functionality 
+  - Extend command aliases functionality
   - Silent mode for components
   - Fix: race condition in mem_rss/mem_vms retrieval
 
@@ -35,12 +36,12 @@
   yak 3.1.1 [2015.05.11]
 ------------------------------------------------------------------------------
 
-  - Filtering by component status support for info command 
+  - Filtering by component status support for info command
 
 ------------------------------------------------------------------------------
   yak 3.1.0 [2014.12.09]
 ------------------------------------------------------------------------------
-  
+
   - Experimental: Mac OS X support (via PyInstaller)
   - Introduce command aliases
   - Add inversion modifier for listing components and/or groups
