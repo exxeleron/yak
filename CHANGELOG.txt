@@ -1,9 +1,11 @@
 ------------------------------------------------------------------------------
-  yak 3.2.1 [2016.xx.xx]
+  yak 3.3.0 [2016.xx.xx]
 ------------------------------------------------------------------------------
 
   - Handling of detached components
   - Improve performance: roll log file lookup for q components
+  - psutil library upgraded to 4.3.0
+  - configobj upgraded to 5.0.6
 
 ------------------------------------------------------------------------------
   yak 3.2.0 [2015.09.14]

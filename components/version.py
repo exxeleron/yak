@@ -14,6 +14,6 @@
 #  limitations under the License.
 #
 
-IMPRINT = {'script': 'version', 'tstamp': '20151223143450', 'version': '3.2.1', 'name': 'yak', 'author': 'exxeleron'} ### imprint ###
+IMPRINT = {'script': 'version', 'tstamp': '20160620111748', 'version': '3.3.0beta', 'name': 'yak', 'author': 'exxeleron'} ### imprint ###
 
 __version__ = "{version}-{tstamp}".format(**IMPRINT)
