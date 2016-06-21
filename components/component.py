@@ -299,7 +299,7 @@ class ComponentConfiguration(object):
     """
 
     typeid = "cmd"
-    attrs = ["uid", "full_cmd", "requires", "command", "command_args", "bin_path", "data_path", "log_path", "cpu_affinity", "start_wait", "stop_wait", "sys_user", "timestamp_mode", "silent"]
+    attrs = ["uid", "full_cmd", "requires", "command", "command_args", "bin_path", "data_path", "log_path", "cpu_affinity", "start_wait", "sys_user", "timestamp_mode", "silent"]
 
     def __init__(self, uid, **kwargs):
         self.uid = "{0}.{1}".format(*uid) if len(uid) <= 2 else "{0}.{1}_{2}".format(*uid)
@@ -424,7 +424,6 @@ class ComponentConfiguration(object):
         self.log_path = self._get_path("logPath", cfg)
         self.cpu_affinity = [self._int_(v) for v in self._get_list("cpuAffinity", cfg)]
         self.start_wait = self._float_(self._get_value("startWait", cfg, 1))
-        self.stop_wait = self._float_(self._get_value("stopWait", cfg, 1))
         self.sys_user = self._get_list("sysUser", cfg)
         self.command_args = self._get_value("commandArgs", cfg)
         self.timestamp_mode = TimestampMode.from_string(self._get_value("timestampMode", cfg, "utc"))
@@ -511,5 +510,3 @@ class ComponentConfiguration(object):
         sc = ComponentConfiguration.plugins[typeid](uid = uid)
         sc.parse(cfg)
         return sc
-
-

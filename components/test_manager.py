@@ -43,7 +43,6 @@ class TestConfiguration(unittest.TestCase):
                                                               data_path = "_data_",
                                                               log_path = "_log_/hdb",
                                                               start_wait = 3,
-                                                              stop_wait = 1,
                                                               sys_user = ["tcore", "root"],
                                                               cpu_affinity = [0, 1],
                                                               port = 15005,
@@ -64,7 +63,6 @@ class TestConfiguration(unittest.TestCase):
                                                               data_path = "_data_",
                                                               log_path = "_log_/rdb",
                                                               start_wait = 3,
-                                                              stop_wait = 1,
                                                               sys_user = ["tcore", "root"],
                                                               cpu_affinity = [0, 1],
                                                               port = -16000,
@@ -85,7 +83,6 @@ class TestConfiguration(unittest.TestCase):
                                                                  data_path = "_data_",
                                                                  log_path = "_log_/monitor",
                                                                  start_wait = 3,
-                                                                 stop_wait = 1,
                                                                  sys_user = ["tcore", "root"],
                                                                  cpu_affinity = [0, 1],
                                                                  timestamp_mode = TimestampMode.UTC,
@@ -98,7 +95,6 @@ class TestConfiguration(unittest.TestCase):
                                                                data_path = "_data_",
                                                                log_path = "_log_/cep_7",
                                                                start_wait = 1,
-                                                               stop_wait = 1,
                                                                sys_user = [],
                                                                cpu_affinity = [],
                                                                port = 16107,
@@ -119,7 +115,6 @@ class TestConfiguration(unittest.TestCase):
                                                                 data_path = "_data_",
                                                                 log_path = "_log_/python",
                                                                 start_wait = 1,
-                                                                stop_wait = 1,
                                                                 sys_user = [],
                                                                 timestamp_mode = TimestampMode.UTC,
                                                                 silent = True,
@@ -143,28 +138,28 @@ class TestConfiguration(unittest.TestCase):
         self.assertEqual("hdb", env["EC_COMPONENT"])
         self.assertEqual("core", env["EC_GROUP"])
         self.assertEqual("hdb", env["EC_COMPONENT_TYPE"])
-        
+
         self.assertEqual("_bin_/etc_shared/,/app/etc/hdb", env["EC_ETC_PATH"])
         self.assertEqual("LOG,MONITOR", env["EC_EVENT_DEST"])
         self.assertEqual("/data/shared/events/", env["EC_EVENT_PATH"])
-        
+
 
     def testDependencyOrder(self):
         c = ComponentManager("components/test/sample.cfg", "components/test/test.status")
         self.assertEqual(c.dependencies_order, ["core.hdb", "cep.python", "core.rdb", "core.monitor", "cep.cep_7"])
- 
+
     def testDependencyOrderFailSelfDependency(self):
         with self.assertRaises(DependencyError):
             ComponentManager("components/test/self_dep.cfg", "components/test/test.status")
- 
+
     def testDependencyOrderFailCircularDependency(self):
         with self.assertRaises(DependencyError):
             ComponentManager("components/test/circular_dep.cfg", "components/test/test.status")
- 
+
     def testDependencyOrderFailExternalDependency(self):
         with self.assertRaises(DependencyError):
             ComponentManager("components/test/ext_dep.cfg", "components/test/test.status")
- 
+
 
 
 if __name__ == "__main__":

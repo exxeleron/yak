@@ -4,6 +4,7 @@
 
   - Handling of detached components
   - Improve performance: roll log file lookup for q components
+  - Remove stopWait configuration parameter
   - psutil library upgraded to 4.3.0
   - configobj upgraded to 5.0.6
 
