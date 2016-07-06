@@ -27,7 +27,7 @@ from datetime import datetime
 from functools import partial
 from optparse import OptionParser
 
-from osutil import get_username
+from osutil import get_username, is_empty
 from components import manager, component
 from components.utils import get_full_exc_info, get_short_exc_info, to_camel_case, to_underscore
 
@@ -46,19 +46,21 @@ HLINE = "-" * 80
 
 
 def show_file(path, internal = False):
-    if not path:
-        return
-    elif internal or VIEWER is None:
-        print "# {0}".format(os.path.normpath(path))
-        if os.path.exists(path):
+    if not path or is_empty(path):
+        return 'Skipped'
+
+    try:
+        if internal or VIEWER is None:
+            print "\n[BEGIN]"
             with open(path, "r") as file:
                 for line in file:
                     print line.rstrip()
+            print "[END]\n"
         else:
-            print "Cannot locate file: %s" % path
-    else:
-        p = subprocess.Popen([VIEWER, path])
-        p.communicate()
+            p = subprocess.Popen([VIEWER, path])
+            p.communicate()
+    except:
+        return get_short_exc_info()
 
 
 
@@ -267,7 +269,6 @@ class ComponentManagerShell(cmd.Cmd):
             print HLINE
             return 1
 
-    # utility function
     def _format_parameter(self, key, value, default = ""):
         if isinstance(value, (list, tuple, set)):
             return ", ".join(str(e) for e in value)
@@ -283,6 +284,10 @@ class ComponentManagerShell(cmd.Cmd):
             return default
 
         return value
+    
+    def _show_file(self, component_uid, path):
+        status = show_file(path)
+        print "\t{0:<30}\t{1:<10}\t{2}".format(component_uid, status if status else "Viewed", path)
 
     # shell commands
     def _evaluate_alias(self, commands, args):
@@ -379,13 +384,6 @@ class ComponentManagerShell(cmd.Cmd):
 
     @_error_handler
     @_cmd_line_split
-    @_single_component_allowed
-    def do_console(self, component, params):
-        print "Starting interactive console..."
-        return 0 if self._manager.console(component, **params) else 1
-
-    @_error_handler
-    @_cmd_line_split
     @_multiple_components_allowed
     def do_interrupt(self, components, params):
         print "Interrupting components..."
@@ -394,20 +392,30 @@ class ComponentManagerShell(cmd.Cmd):
     @_error_handler
     @_cmd_line_split
     @_single_component_allowed
-    def do_out(self, component, params):
-        return show_file(self._manager.components[component].stdout)
+    def do_console(self, component, params):
+        print "Starting interactive console..."
+        return 0 if self._manager.console(component, **params) else 1
 
     @_error_handler
     @_cmd_line_split
-    @_single_component_allowed
-    def do_err(self, component, params):
-        return show_file(self._manager.components[component].stderr)
+    @_multiple_components_allowed
+    def do_out(self, components, params):
+        for component_uid in sorted(components):
+            self._show_file(component_uid, self._manager.components[component_uid].stdout)
 
     @_error_handler
     @_cmd_line_split
-    @_single_component_allowed
-    def do_log(self, component, params):
-        return show_file(self._manager.components[component].log)
+    @_multiple_components_allowed
+    def do_err(self, components, params):
+        for component_uid in sorted(components):
+            self._show_file(component_uid, self._manager.components[component_uid].stderr)
+
+    @_error_handler
+    @_cmd_line_split
+    @_multiple_components_allowed
+    def do_log(self, components, params):
+        for component_uid in sorted(components):
+            self._show_file(component_uid, self._manager.components[component_uid].log)
 
 
 # option parser configuration

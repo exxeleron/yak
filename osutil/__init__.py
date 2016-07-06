@@ -53,7 +53,7 @@ else:
 
 
 def is_empty(path):
-    return (not path) or (os.path.isfile(path) and os.stat(path).st_size == 0)
+    return (not path) or (not os.path.exists(path)) or (os.path.isfile(path) and os.stat(path).st_size == 0)
 
 def file_size(path):
     return os.stat(path).st_size if path and os.path.isfile(path) else 0
@@ -101,4 +101,3 @@ def get_memory_percent(pid):
         return p.memory_percent()
     except psutil.NoSuchProcess:
         pass
-
