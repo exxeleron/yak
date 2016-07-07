@@ -182,11 +182,9 @@ class Component(object):
         if self._process:
             if self.configuration.start_wait > 0:
                 if self._process.poll():
-                    self.pid = None
                     raise ComponentError("Component {0} finished prematurely with code {1}".format(self.uid, self._process.returncode))
             else:
                 self._process.wait()
-                self.pid = None
                 self.stopped = self.timestamp()
 
     def interactive(self):
@@ -212,7 +210,6 @@ class Component(object):
         osutil.terminate(self.pid, force)
         self.stopped = self.timestamp()
         self.stopped_by = osutil.get_username()
-        self.pid = None
 
     def interrupt(self):
         osutil.interrupt(self.pid)
@@ -225,15 +222,10 @@ class Component(object):
     @property
     def is_alive(self):
         """Returns true if component is alive, false otherwise"""
-        if self.pid:
-            if osutil.is_alive(int(self.pid)):
-                cmd = shlex.split(str(self.executed_cmd), posix = False)
-                proc_cmd = self.proc_cmd
-                return not proc_cmd or not cmd or proc_cmd == cmd
-            else:
-                self.pid = None
-                self.save_status()
-                return False
+        if self.pid and osutil.is_alive(int(self.pid)):
+            cmd = shlex.split(str(self.executed_cmd), posix = False)
+            proc_cmd = self.proc_cmd
+            return not proc_cmd or not cmd or proc_cmd == cmd
         else:
             return False
 
