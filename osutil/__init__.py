@@ -60,6 +60,29 @@ def file_size(path):
 
 
 # generic from psutil
+def terminate(pid):
+    if pid:
+        try:
+            p = psutil.Process(pid)
+            p.terminate()
+        except psutil.NoSuchProcess, e:
+            raise OSError("Failed attempt to terminate process with pid: %s.\n%s" % (pid, e))
+
+def kill(pid):
+    if pid:
+        try:
+            p = psutil.Process(pid)
+            p.kill()
+        except psutil.NoSuchProcess, e:
+            raise OSError("Failed attempt to terminate process with pid: %s.\n%s" % (pid, e))
+
+def get_command_line(pid):
+    try:
+        p = psutil.Process(pid)
+        return p.cmdline()
+    except (psutil.NoSuchProcess, psutil.AccessDenied):
+        return None
+
 def get_cpu_sys(pid):
     try:
         p = psutil.Process(pid)

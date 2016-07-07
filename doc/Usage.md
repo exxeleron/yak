@@ -32,6 +32,7 @@ $ yak start kdb.rdb
 |----------------|----------|---------------------------------------------------------
 | `start`        |          | starts component(s) with given component id(s)
 | `stop`         |          | stops component(s) with given component id(s)
+| `kill`         |          | force stops component(s) with given component id(s)
 | `interrupt`    |          | sends interrupt signal to component(s) with given component id(s) (UNIX only)
 | `restart`      |          | restarts component(s) with given component id(s)
 | `info`         |    .     | prints status information about listed component(s)
@@ -69,7 +70,7 @@ In order to configure `yak` paths (log directories or system location) command l
 | <pre>-a ARGS</pre> <pre>--arguments=ARGS</pre>   | empty         | additional arguments for the processes (valid for `start`, `restart` and `console` commands)
 
 
-It is convenient to set `YAK_OPTS` environmental variable with default options for yak. Command line options always take precedence before `YAK_OPTS`. 
+It is convenient to set `YAK_OPTS` environmental variable with default options for yak. Command line options always take precedence before `YAK_OPTS`.
 
 Example `YAK_OPTS` value:
 
@@ -88,8 +89,9 @@ Each component inside yak is assigned with status attribute:
 | `DISTURBED`  | Component has been started, there is an active OS process matching original PID and file with STDERR redirection is non-empty.
 | `STOPPED`    | Component has been stopped by the user or component hasn't been started yet.
 | `TERMINATED` | OS process with matching original PID cannot be found and the component hasn't been stopped by the user.
+| `HALTED`     | Component has been signaled to stop, but the process with original PID is still active.
 | `WSFULL`     | q only. If file with STDERR redirection is non-empty and finishes with one of the following: wsfull or -w abort.
-| `DETACHED`  | Component is present in the status file, but the configuration is missing.
+| `DETACHED`   | Component is present in the status file, but the configuration is missing.
 
 
 Output from the `info` command can be filtered based on component status via command line parameter `-F / --filter`.

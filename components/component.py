@@ -84,15 +84,25 @@ class TimestampMode:
             raise AttributeError("Invalid timestampMode: " + name)
 
 
+class Operation(object):
+    START = "START"
+    STOP = "STOP"
+    KILL = "KILL"
+    INTERRUPT = "INTERRUPT"
+    INTERACTIVE = "INTERACTIVE"
+
+
 class Status(object):
     DISTURBED = "DISTURBED"
     RUNNING = "RUNNING"
     STOPPED = "STOPPED"
+    KILLED = "KILLED"
     TERMINATED = "TERMINATED"
+    HALTING = "HALTING"
     WSFULL = "WSFULL"
     DETACHED = "DETACHED"
 
-running_statuses = (Status.RUNNING, Status.DISTURBED, Status.DETACHED)
+running_statuses = (Status.RUNNING, Status.DISTURBED, Status.DETACHED, Status.HALTING)
 
 
 class Component(object):
@@ -101,7 +111,7 @@ class Component(object):
     """
 
     typeid = "cmd"
-    attrs = ["uid", "status", "pid", "executed_cmd", "log", "stdout", "stderr", "stdenv", "started", "started_by", "stopped", "stopped_by"]
+    attrs = ["uid", "status", "pid", "executed_cmd", "last_operation", "log", "stdout", "stderr", "stdenv", "started", "started_by", "stopped", "stopped_by"]
 
     def __init__(self, uid, **kwargs):
         self.uid = str(uid)
@@ -164,6 +174,8 @@ class Component(object):
         return env
 
     def execute(self):
+        self.last_operation = Operation.START
+
         if self.configuration.cpu_affinity:
             osutil.set_affinity(os.getpid(), self.configuration.cpu_affinity)
 
@@ -188,6 +200,8 @@ class Component(object):
                 self.stopped = self.timestamp()
 
     def interactive(self):
+        self.last_operation = Operation.INTERACTIVE
+
         if self.configuration.cpu_affinity:
             osutil.set_affinity(os.getpid(), self.configuration.cpu_affinity)
 
@@ -207,11 +221,18 @@ class Component(object):
             raise ComponentError("Component {0} finished prematurely with code {1}".format(self.uid, p.returncode))
 
     def terminate(self, force = False):
-        osutil.terminate(self.pid, force)
+        if force:
+            self.last_operation = Operation.KILL
+            osutil.kill(self.pid)
+        else:
+            self.last_operation = Operation.STOP
+            osutil.terminate(self.pid)
+
         self.stopped = self.timestamp()
         self.stopped_by = osutil.get_username()
 
     def interrupt(self):
+        self.last_operation = Operation.INTERRUPT
         osutil.interrupt(self.pid)
 
     def save_status(self):
@@ -233,9 +254,16 @@ class Component(object):
     def status(self):
         """Returns status of a component"""
         if self.is_alive:
-            return Status.RUNNING if self.configuration.silent or osutil.is_empty(self.stderr) else Status.DISTURBED
-        elif not self.started or self.stopped:
+            if self.stopped:
+                return Status.HALTING
+            elif self.configuration.silent or osutil.is_empty(self.stderr):
+                return Status.RUNNING
+            else:
+                return Status.DISTURBED
+        elif not self.started or self.last_operation == Operation.STOP:
             return Status.STOPPED
+        elif self.last_operation == Operation.KILL:
+            return Status.KILLED
         else:
             return Status.TERMINATED
 

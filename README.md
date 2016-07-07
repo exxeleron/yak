@@ -1,4 +1,4 @@
-## yak 3.2
+## yak 3.3
 
 yak is an application used to manage Enterprise Components deployed on a single host.
 
@@ -30,21 +30,21 @@ Limitations:
 
 #### Branding application
 
-The yak script can be branded with current version, timestamp by altering the code before creating the package. 
+The yak script can be branded with current version, timestamp by altering the code before creating the package.
 
 To brand using values defined in `setup.py` execute:
 
 `python setup.py imprint`.
 
-Version and timestamp values can be ovverriden from command line: 
+Version and timestamp values can be ovverriden from command line:
 
-`python setup.py imprint --version=3.1.0 --tstamp=20141208091715`.
+`python setup.py imprint --version=3.3.0 --tstamp=20160623000000`.
 
 
 #### Freezing application
 
 Depending on target platform, executable version of the yak is created with:
- - the [bbfreeze](https://pypi.python.org/pypi/bbfreeze) on 
+ - the [bbfreeze](https://pypi.python.org/pypi/bbfreeze) on
  - the [pyinstaller](http://www.pyinstaller.org/) tool on Mac OS X
 
 Requirements:
@@ -55,7 +55,7 @@ Instructions:
 Execute:
 
   `python setup.py freeze`
-  
+
 or:
 
   `pyinstaller yak.spec` on Mac OS X platform
@@ -68,7 +68,7 @@ Binary distribution can be packed to a single ZIP archive by executing:
 
 `python setup.py package`
 
-   
+
 #### Testing
 
 Application uses py.test as a test runner for unit tests.
@@ -81,14 +81,14 @@ Instructions:
 #### Requirements
 
  - Python 2.7 (Python 2.6 can be used if ordereddict package is installed)
- - bbfreeze 1.1.2 or pyinstaller 2.1
- - configobj 5.0.4
- - psutil 1.2.1
- - pywin32 (required on: windows) 
+ - bbfreeze 1.1.3 or pyinstaller 2.1
+ - configobj 5.0.6
+ - psutil 4.3.0
+ - pywin32 (required on: windows)
  - pyreadline 1.7 (required on: windows)
 
 Required libraries can be conveniently installed using [pip](https://pypi.python.org/pypi/pip).
-Execute: 
+Execute:
 
 `pip install -r requirements.txt` to install dependencies on Linux and Windows.
 `pip install -r requirements-osx.txt` to install dependencies on Mac OS X.

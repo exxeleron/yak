@@ -256,7 +256,7 @@ class ComponentManager(object):
             return False
 
         try:
-            component.terminate()
+            component.terminate(force = force)
             self._components[uid] = component
             return True
         finally:

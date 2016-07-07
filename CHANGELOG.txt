@@ -2,6 +2,8 @@
   yak 3.3.0 [2016.xx.xx]
 ------------------------------------------------------------------------------
 
+  - Add new command: kill
+  - Rework component status persistence and detection
   - Handling of detached components
   - Improve performance: roll log file lookup for q components
   - Remove stopWait configuration parameter

@@ -32,14 +32,6 @@ def execute(cmd, bin_path, env, stdin = subprocess.PIPE, stdout = None, stderr =
                              env = env
                              )
 
-def terminate(pid, force = False):
-    if pid:
-        try:
-            p = psutil.Process(pid)
-            p.terminate()
-        except psutil.NoSuchProcess, e:
-            raise OSError("Failed attempt to terminate process with pid: %s.\n%s" % (pid, e))
-
 def interrupt(pid):
     if pid:
         try:
@@ -54,11 +46,3 @@ def get_username():
 
 def symlink(file, link):
     pass
-
-def get_command_line(pid):
-    try:
-        p = psutil.Process(pid)
-        return p.cmdline()
-    except psutil.NoSuchProcess:
-        pass
-

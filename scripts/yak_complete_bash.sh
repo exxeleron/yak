@@ -3,7 +3,7 @@ _yak() {
   COMPREPLY=()
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
-  opts="start stop restart info interrupt console log err out details test"
+  opts="start stop kill restart info interrupt console log err out details"
   services="$(yak !)"
   negservices="$(yak ! | sed -e 's/^/!/g')"
 
