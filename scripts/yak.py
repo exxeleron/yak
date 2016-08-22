@@ -47,7 +47,7 @@ HLINE = "-" * 80
 
 def show_file(path, internal = False):
     if not path or is_empty(path):
-        return 'Skipped'
+        return False
 
     try:
         if internal or VIEWER is None:
@@ -59,6 +59,8 @@ def show_file(path, internal = False):
         else:
             p = subprocess.Popen([VIEWER, path])
             p.communicate()
+
+        return True
     except:
         return get_short_exc_info()
 
@@ -286,10 +288,16 @@ class ComponentManagerShell(cmd.Cmd):
             return default
 
         return value
-    
+
     def _show_file(self, component_uid, path):
         status = show_file(path)
-        print "\t{0:<30}\t{1:<10}\t{2}".format(component_uid, status if status else "Viewed", path)
+        if status and not isinstance(status, Exception):
+            status = "Viewed"
+
+        if status:
+            print "\t{0:<30}\t{1:<10}\t{2}".format(component_uid, status, path)
+        elif not self._options.ignore_empty_files:
+            print "\t{0:<30}\t{1:<10}\t{2}".format(component_uid, "Skipped", path)
 
     # shell commands
     def _evaluate_alias(self, commands, args):
@@ -461,6 +469,7 @@ def get_opt_parser():
     opt_parser.add_option("-d", "--delimiter", help = "column delimiter for the info command [default: padded spaces]", default = " ")
     opt_parser.add_option("-f", "--format", help = "display format for info command", default = "uid:18#pid:5#port:6#status:11#started:19#stopped:19#lastOperation:10")
     opt_parser.add_option("-F", "--filter", help = "status filter for info command", default = "")
+    opt_parser.add_option("--ignore-empty-files", help = "ignore empty/non-existing files in summary for out/err/log commands", action="store_true", dest="ignore_empty_files")
     opt_parser.add_option("-A", "--alias", help = "define command alias e.g.: --alias restart_console \"stop, console\"", action = "callback", callback = define_aliases, nargs = 2, type = "str")
     opt_parser.add_option("-a", "--arguments", help = "additional arguments passed to process - valid only for 'start', 'restart' and 'console' commands", default = "")
     return opt_parser
