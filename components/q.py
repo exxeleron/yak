@@ -144,13 +144,14 @@ class QComponent(Component):
         try:
             if (st == Status.TERMINATED or st == Status.DISTURBED) and not osutil.is_empty(self.stderr):
                 stderr_size = osutil.file_size(self.stderr)
-                if stderr_size >= 8:
+                if stderr_size > 5:
                     with open(self.stderr, "r") as stderr:
-                        stderr.seek(stderr_size - 10 if stderr_size > 10 else stderr_size - 8)
+                        if (stderr_size > 9):
+                            stderr.seek(stderr_size - 9)
                         err = stderr.read()
 
-                        if err[-8:].strip()[-6:] == "wsfull" : st = Status.WSFULL
-                        if err[-10:].strip()[-8:] == "-w abort" : st = Status.WSFULL
+                        if "wsfull" in err or "-w abort" in err:
+                            st = Status.WSFULL
         finally:
             return st
 
