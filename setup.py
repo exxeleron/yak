@@ -106,7 +106,7 @@ class bbfreeze(Command):
             print "data_files: ", self.data_files
             for df in self.data_files:
                 shutil.copy(df, self.dist_dir)
-        
+
 
 class imprint(Command):
     description = "imprint application scripts"
@@ -154,7 +154,7 @@ class imprint(Command):
 
 setup(
     name = "yak",
-    version = os.environ.get("version", "3.2.1"),
+    version = os.environ.get("version", "3.3.0"),
     description = "process components for enterprise components",
 
     license = "Apache License Version 2.0",
@@ -167,12 +167,12 @@ setup(
                 "freeze": bbfreeze,
                 "imprint": imprint,
                },
-    
+
     packages = ["components", "osutil", "", "scripts"],
-     
+
     scripts = ["scripts/yak.py"],
     py_modules = [],
-    
+
     options = {"freeze": dict(data_files = ["scripts/yak_complete_bash.sh"],
                               ),
                "imprint": dict(files = ["scripts/yak.py", "components/version.py"]),

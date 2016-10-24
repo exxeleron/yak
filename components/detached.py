@@ -64,22 +64,17 @@ class DetachedComponent(object):
         """Saves component status in the status file"""
         if self._status_persistance:
             self._status_persistance.save_status(self)
-            
+
     def check_process(self):
         pass
 
     @property
     def is_alive(self):
         """Returns true if component is alive, false otherwise"""
-        if self.pid:
-            if osutil.is_alive(int(self.pid)):
-                cmd = shlex.split(str(self.executed_cmd), posix = False)
-                proc_cmd = self.proc_cmd
-                return not proc_cmd or not cmd or proc_cmd == cmd
-            else:
-                self.pid = None
-                self.save_status()
-                return False
+        if self.pid and osutil.is_alive(int(self.pid)):
+            cmd = shlex.split(str(self.executed_cmd), posix = False)
+            proc_cmd = self.proc_cmd
+            return not proc_cmd or not cmd or proc_cmd == cmd
         else:
             return False
 

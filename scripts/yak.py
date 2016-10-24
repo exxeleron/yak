@@ -27,7 +27,7 @@ from datetime import datetime
 from functools import partial
 from optparse import OptionParser
 
-from osutil import get_username
+from osutil import get_username, is_empty
 from components import manager, component
 from components.utils import get_full_exc_info, get_short_exc_info, to_camel_case, to_underscore
 
@@ -38,7 +38,7 @@ except ImportError:  # python < 2.7 -> try to import ordereddict
 
 
 
-IMPRINT = {'script': 'yak', 'tstamp': '20151223143450', 'version': '3.2.1', 'name': 'yak', 'author': 'exxeleron'} ### imprint ###
+IMPRINT = {'script': 'yak', 'tstamp': '20160620111748', 'version': '3.3.0beta', 'name': 'yak', 'author': 'exxeleron'} ### imprint ###
 ROOT_DIR = os.path.dirname(sys.path[0])
 VIEWER = None
 HLINE = "-" * 80
@@ -46,19 +46,23 @@ HLINE = "-" * 80
 
 
 def show_file(path, internal = False):
-    if not path:
-        return
-    elif internal or VIEWER is None:
-        print "# {0}".format(os.path.normpath(path))
-        if os.path.exists(path):
+    if not path or is_empty(path):
+        return False
+
+    try:
+        if internal or VIEWER is None:
+            print "\n[BEGIN]"
             with open(path, "r") as file:
                 for line in file:
                     print line.rstrip()
+            print "[END]\n"
         else:
-            print "Cannot locate file: %s" % path
-    else:
-        p = subprocess.Popen([VIEWER, path])
-        p.communicate()
+            p = subprocess.Popen([VIEWER, path])
+            p.communicate()
+
+        return True
+    except:
+        return get_short_exc_info()
 
 
 
@@ -242,6 +246,8 @@ class ComponentManagerShell(cmd.Cmd):
         def status_callback(component_uid, status):
             if status is None:
                 print "\t{0:<30}\t.".format(component_uid)
+            elif isinstance(status, basestring):
+                print "\t{0:<30}\t{1}".format(component_uid, status)
             elif not isinstance(status, Exception):
                 print "\t{0:<30}\t{1}".format(component_uid, "OK" if status else "Skipped")
             else:
@@ -258,7 +264,7 @@ class ComponentManagerShell(cmd.Cmd):
             if isinstance(status, Exception):
                 failed = True
                 print HLINE
-                print "Failed to start: {0}".format(component_uid)
+                print "Failed to {0}: {1}".format(command.__name__, component_uid)
                 print status
                 print "\nCaptured stderr:"
                 show_file(self._manager.components[component_uid].stderr, True)
@@ -267,7 +273,6 @@ class ComponentManagerShell(cmd.Cmd):
             print HLINE
             return 1
 
-    # utility function
     def _format_parameter(self, key, value, default = ""):
         if isinstance(value, (list, tuple, set)):
             return ", ".join(str(e) for e in value)
@@ -283,6 +288,16 @@ class ComponentManagerShell(cmd.Cmd):
             return default
 
         return value
+
+    def _show_file(self, component_uid, path):
+        status = show_file(path)
+        if status and not isinstance(status, Exception):
+            status = "Viewed"
+
+        if status:
+            print "\t{0:<30}\t{1:<10}\t{2}".format(component_uid, status, path)
+        elif not self._options.ignore_empty_files:
+            print "\t{0:<30}\t{1:<10}\t{2}".format(component_uid, "Skipped", path)
 
     # shell commands
     def _evaluate_alias(self, commands, args):
@@ -373,16 +388,16 @@ class ComponentManagerShell(cmd.Cmd):
         print "Stopping components..."
         return self._apply_command(self._manager.stop, list(reversed(components)))
 
+    @_error_handler
+    @_cmd_line_split
+    @_multiple_components_allowed
+    def do_kill(self, components, params):
+        print "Killing components..."
+        return self._apply_command(self._manager.stop, list(reversed(components)), force = True)
+
     def do_restart(self, args):
         retval = self.do_stop(args)
         return retval if retval else self.do_start(args)
-
-    @_error_handler
-    @_cmd_line_split
-    @_single_component_allowed
-    def do_console(self, component, params):
-        print "Starting interactive console..."
-        return 0 if self._manager.console(component, **params) else 1
 
     @_error_handler
     @_cmd_line_split
@@ -394,25 +409,36 @@ class ComponentManagerShell(cmd.Cmd):
     @_error_handler
     @_cmd_line_split
     @_single_component_allowed
-    def do_out(self, component, params):
-        return show_file(self._manager.components[component].stdout)
+    def do_console(self, component, params):
+        print "Starting interactive console..."
+        return 0 if self._manager.console(component, **params) else 1
 
     @_error_handler
     @_cmd_line_split
-    @_single_component_allowed
-    def do_err(self, component, params):
-        return show_file(self._manager.components[component].stderr)
+    @_multiple_components_allowed
+    def do_out(self, components, params):
+        for component_uid in sorted(components):
+            self._show_file(component_uid, self._manager.components[component_uid].stdout)
 
     @_error_handler
     @_cmd_line_split
-    @_single_component_allowed
-    def do_log(self, component, params):
-        return show_file(self._manager.components[component].log)
+    @_multiple_components_allowed
+    def do_err(self, components, params):
+        for component_uid in sorted(components):
+            self._show_file(component_uid, self._manager.components[component_uid].stderr)
+
+    @_error_handler
+    @_cmd_line_split
+    @_multiple_components_allowed
+    def do_log(self, components, params):
+        for component_uid in sorted(components):
+            self._show_file(component_uid, self._manager.components[component_uid].log)
 
 
 # option parser configuration
 COMMANDS = (("start", "start component or components group"),
             ("stop", "stop component or components group"),
+            ("kill", "force stop component or components group"),
             ("restart", "restart component or components group"),
             ("interrupt", "send INT signal to component or components group"),
             ("info", "display status of component or components group"),
@@ -441,8 +467,9 @@ def get_opt_parser():
     opt_parser.add_option("-l", "--log", help = "operations log [default: %default]", default = os.path.join(ROOT_DIR, "yak-%Y.%m.%d.log"))
     opt_parser.add_option("-v", "--viewer", help = "external viewer")
     opt_parser.add_option("-d", "--delimiter", help = "column delimiter for the info command [default: padded spaces]", default = " ")
-    opt_parser.add_option("-f", "--format", help = "display format for info command", default = "uid:18#pid:5#port:6#status:11#started:19#stopped:19")
+    opt_parser.add_option("-f", "--format", help = "display format for info command", default = "uid:18#pid:5#port:6#status:11#started:19#stopped:19#lastOperation:10")
     opt_parser.add_option("-F", "--filter", help = "status filter for info command", default = "")
+    opt_parser.add_option("--ignore-empty-files", help = "ignore empty/non-existing files in summary for out/err/log commands", action="store_true", dest="ignore_empty_files")
     opt_parser.add_option("-A", "--alias", help = "define command alias e.g.: --alias restart_console \"stop, console\"", action = "callback", callback = define_aliases, nargs = 2, type = "str")
     opt_parser.add_option("-a", "--arguments", help = "additional arguments passed to process - valid only for 'start', 'restart' and 'console' commands", default = "")
     return opt_parser

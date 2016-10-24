@@ -14,17 +14,21 @@
 #  limitations under the License.
 #
 
+import logging
 import os
 import sqlite3
 
 from components.component import Component
+from osutil import get_username
 
 
 class StatusPersistance(object):
     """Manages persistence of processes status"""
 
-    __DB_SCRIPT__ = \
+    __DB_SCHEMA_1__ = \
     """
+    PRAGMA journal_mode=WAL;
+
     CREATE TABLE IF NOT EXISTS components(
         uid VARCHAR PRIMARY KEY,
         typeid VARCHAR,
@@ -39,38 +43,58 @@ class StatusPersistance(object):
         stopped TIMESTAMP,
         stopped_by VARCHAR
     );
-    PRAGMA journal_mode=WAL;
     """
 
-    __ATTRS_COMPONENT__ = ["uid", "typeid", "pid", "executed_cmd",
-                         "log", "stdout", "stderr", "stdenv",
-                         "started", "started_by", "stopped", "stopped_by"]
+    __DB_SCHEMA_2__ = "ALTER TABLE components ADD COLUMN last_operation VARCHAR;"
+
+    __DB_UPGRADE_STEPS__ = {
+        1: __DB_SCHEMA_1__,
+        2: __DB_SCHEMA_2__,
+    }
+
+    __ATTRS_COMPONENT__ = ["uid", "typeid", "pid", "executed_cmd", "last_operation", "log", "stdout", "stderr", "stdenv", "started", "started_by", "stopped", "stopped_by"]
 
     __UPSERT_STATUS__ = \
     "INSERT OR REPLACE INTO components(%s) VALUES(%s)" % \
         (", ".join(__ATTRS_COMPONENT__), "?, " * (len(__ATTRS_COMPONENT__) - 1) + "?")
 
-    __SELECT_STATUS__ = \
-    "SELECT * from components"
+    __SELECT_STATUS__ = "SELECT * from components"
 
-    __DELETE_STATUS__ = \
-    "DELETE FROM components WHERE uid = ?"
+    __DELETE_STATUS__ = "DELETE FROM components WHERE uid = ?"
 
     def __init__(self, statusfile):
         statuspath = os.path.split(statusfile)[0]
         if not os.path.exists(statuspath):
             os.makedirs(statuspath)
 
-        self.__conn = sqlite3.connect(statusfile,
-                                      detect_types = sqlite3.PARSE_DECLTYPES,
-                                      check_same_thread = False,
-                                      timeout = 30.0)
-        self.__conn.row_factory = sqlite3.Row
+        self._statusfile = statusfile
+
         self._init_db_()
 
+        self.__conn = self._connection_()
+        self.__conn.row_factory = sqlite3.Row
+
+    def _connection_(self):
+        return sqlite3.connect(self._statusfile,
+                               detect_types = sqlite3.PARSE_DECLTYPES,
+                               check_same_thread = False,
+                               timeout = 30.0)
+
     def _init_db_(self):
-        self.__conn.executescript(self.__DB_SCRIPT__)
-        self.__conn.commit()
+        connection = self._connection_()
+        with connection:
+            current_schema = connection.execute("PRAGMA user_version").fetchone()[0]
+            target_schema = max(self.__DB_UPGRADE_STEPS__)
+            if current_schema < target_schema:
+                connection.isolation_level = "EXCLUSIVE"
+                logger = logging.getLogger("yak")
+                for step in range(current_schema + 1, target_schema + 1):
+                    if step in self.__DB_UPGRADE_STEPS__:
+                        logger.info("Upgrading status file db schema: [%d/%d]", step, target_schema, extra = {"user": get_username()})
+                        connection.execute("BEGIN EXCLUSIVE")
+                        connection.executescript(self.__DB_UPGRADE_STEPS__[step])
+                        connection.execute("PRAGMA user_version={:d}".format(step))
+                        connection.commit()
 
     def load(self):
         """Loads components status data from the status file"""

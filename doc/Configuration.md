@@ -42,7 +42,7 @@ Each component has to define a type fields containing one of following types:
 
 - generic command-line component (`cmd`)
 - q component (`q`) – q based process, deployed instance of component
-- batch component (`b`) – batch job 
+- batch component (`b`) – batch job
 - external component (`c`) – these components are just for information purposes – `yak` does not support any actions for them
 
 Type definition has to be followed by a colon and a component type. Component type is process specific and is required for the configuration of `q` processes.
@@ -56,7 +56,6 @@ Parameter | Description
 `type` | here: always cmd
 `cpuAffinity` | list of cores for affinity configuration
 `startWait` | period to wait for component startup
-`stopWait` | period to wait for component stop
 `binPath` | working directory
 `dataPath` | data directory
 `logPath` | directory for standard output and standard error redirections
@@ -74,7 +73,6 @@ Parameter | Description
 `type` | here: always q
 `cpuAffinity` | list of cores for affinity configuration
 `startWait` | period to wait for component startup
-`stopWait` | period to wait for component stop
 `port` | port to use
 `libs` | list of additional libraries to be load on start up
 `mulithreaded` | multithreaded input queue mode for q process (negative port value)
@@ -103,7 +101,7 @@ export = etcPath, libPath, eventDest, eventPath, eventMemHistSize
 ```
 
 Variable names are converted to UPPPER_UNDERSCORE_CONVENTION and prefixed with `EC_` prefix, e.g.: `libPath` is exported as `EC_LIB_PATH`.
-Configuration entry as above would make `yak` add all global variables listed in the `export` key to the execution environment (for newly created processes). 
+Configuration entry as above would make `yak` add all global variables listed in the `export` key to the execution environment (for newly created processes).
 
 Note: `EC_COMPONENT_ID`, `EC_COMPONENT`, `EC_GROUP`, `EC_COMPONENT_PKG`, `EC_COMPONENT_TYPE`, `EC_COMPONENT_INSTANCE` are exported implicitly for each managed process.
 
@@ -119,7 +117,7 @@ Q32_PATH = /opt/q32/l32
 
 [group:core]                          # group declaration
   cpuAffinity = 0, 1
-  startWait = 3 
+  startWait = 3
 
   [[core.hdb]]                        # definition of process hdb in namespace kdb
   type = q:hdb/hdb                    # type of process:component package/schema file
@@ -139,9 +137,9 @@ Q32_PATH = /opt/q32/l32
 
 [group:stream]
   # define u/U options and user file to use for the group
-  uOpt = U 
+  uOpt = U
   uFile = $KDB_ROOT_PATH/data/shared/streams.txt
-  
+
   # use 32 bit q version
   qPath = Q32_PATH
   qHome = Q32_HOME

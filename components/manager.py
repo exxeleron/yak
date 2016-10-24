@@ -36,7 +36,7 @@ class ComponentManager(object):
     """
     ComponentManager is responsible for keeping track of all managed components.
     It also serves as an operation gateway for managing components and provides
-    operations like: start, stop, interrupt. 
+    operations like: start, stop, interrupt.
     """
 
     def __init__(self, config_file, status_file):
@@ -149,9 +149,9 @@ class ComponentManager(object):
         """
         Starts multiple components. If component(s) is already running, nothing happens.
         @param components: list of identifier of the component
-        @param callback: function to be executed after status of a component has been verified 
+        @param callback: function to be executed after status of a component has been verified
         @param pause_callback: function to be executed after while operation is paused
-        @return: List of: tuples (uid, True if component has been started, False if the component is already running or ComponentError if component cannot be started). 
+        @return: List of: tuples (uid, True if component has been started, False if the component is already running or ComponentError if component cannot be started).
         """
         status = OrderedDict()
         start_wait = 0
@@ -193,9 +193,9 @@ class ComponentManager(object):
     def _start(self, uid, **kwargs):
         """
         Starts component with given uid. If component is already running, nothing happens.
-        @param uid: identifier of the component 
+        @param uid: identifier of the component
         @return: True if component has been started, False if the component is already running.
-        @raise ComponentError: if component cannot be started. 
+        @raise ComponentError: if component cannot be started.
         """
         component = self._components[uid]
         component_cfg = self._configuration[uid] if uid in self._configuration else dict()
@@ -222,34 +222,21 @@ class ComponentManager(object):
             if overrides_arguments:
                 component_cfg.command_args = arguments_copy
 
-    def stop(self, components, callback = None, pause_callback = None, **kwargs):
+    def stop(self, components, callback = None, **kwargs):
         """
         Stops multiple components. If component(s) is not running, nothing happens.
         @param components: list of identifier of the component
         @param callback: function to be executed after status of a component has been stopped/killed
-        @param pause_callback: function to be executed after while operation is paused
-        @return: List of: tuples (uid, True if component has been stopped, False if the component is not running or OSError if component cannot be stopped). 
+        @return: List of: tuples (uid, True if component has been stopped, False if the component is not running or OSError if component cannot be stopped).
         """
         status = OrderedDict()
         stop_wait = 0
 
         for component in components:
-            stop_wait = max(stop_wait, self._components[component].configuration.stop_wait) if self._components[component].configuration else stop_wait
             try:
                 status[component] = self._stop(component, **kwargs)
             except Exception, e:
                 status[component] = e
-
-        if pause_callback:
-            pause_callback(stop_wait)
-        time.sleep(stop_wait)
-
-        for component in components:
-            if self._components[component].is_alive:
-                try:
-                    status[component] = self._stop(component, True, **kwargs)
-                except Exception, e:
-                    status[component] = e
 
             if callback:
                 callback(component, status[component])
@@ -269,7 +256,7 @@ class ComponentManager(object):
             return False
 
         try:
-            component.terminate()
+            component.terminate(force = force)
             self._components[uid] = component
             return True
         finally:
@@ -278,9 +265,9 @@ class ComponentManager(object):
     def console(self, uid, **kwargs):
         """
         Starts component with given uid with attached interactive console. If component is already running, nothing happens.
-        @param uid: identifier of the component 
+        @param uid: identifier of the component
         @return: True if component has been started, False if the component is already running.
-        @raise ComponentError: if component cannot be started. 
+        @raise ComponentError: if component cannot be started.
         """
         component = self._components[uid]
         component_cfg = self._configuration[uid] if uid in self._configuration else dict()
@@ -307,10 +294,10 @@ class ComponentManager(object):
     def interrupt(self, components, callback = None, pause_callback = None, **kwargs):
         """
         Sends interrupt signal to multiple components. If component(s) is not running, nothing happens. (UNIX only)
-        @param components: list of identifier of the component 
+        @param components: list of identifier of the component
         @param callback: function to be executed after status of a component has been interrupted
         @param pause_callback: function to be executed after while operation is paused
-        @return: List of: tuples (uid, True if component has been interrupted, False if the component is not running or OSError if component cannot be interrupted). 
+        @return: List of: tuples (uid, True if component has been interrupted, False if the component is not running or OSError if component cannot be interrupted).
         """
         status = OrderedDict()
 
@@ -341,4 +328,3 @@ class ComponentManager(object):
             return True
         finally:
             self._persistance.save_status(component)
-

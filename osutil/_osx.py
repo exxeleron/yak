@@ -37,19 +37,8 @@ def execute(cmd, bin_path, env, stdin = open(os.devnull, "r+"), stdout = None, s
                              stderr = stderr,
                              cwd = bin_path,
                              env = env,
-                             preexec_fn = signal_ignore,
+                             preexec_fn = signal_ignore
                              )
-
-def terminate(pid, force = False):
-    if pid:
-        try:
-            p = psutil.Process(pid)
-            if not force:
-                p.terminate()
-            else:
-                p.kill()
-        except psutil.NoSuchProcess, e:
-            raise OSError("Failed attempt to terminate process with pid: %s.\n%s" % (pid, e))
 
 def interrupt(pid):
     if pid:
@@ -64,13 +53,6 @@ def get_username():
 
 def symlink(file, link):
     os.symlink(file, link)
-
-def get_command_line(pid):
-    try:
-        p = psutil.Process(pid)
-        return p.cmdline()
-    except (psutil.NoSuchProcess, psutil.AccessDenied):
-        return None
 
 def set_affinity(pid, cpus):
     pass

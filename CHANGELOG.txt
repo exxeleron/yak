@@ -1,15 +1,24 @@
 ------------------------------------------------------------------------------
-  yak 3.2.1 [2015.xx.xx]
+  yak 3.3.0 [2016.xx.xx]
 ------------------------------------------------------------------------------
 
+  - Add new command: kill
+  - Rework component status persistence and detection
   - Handling of detached components
+  - Remove stopWait configuration parameter
+  - PIDs in status file are no longer removed
+  - Commands: out/err/log can be applied to more than one component in single execution
+  - Improve performance: roll log file lookup for q components
+  - Fix: wsfull status detection
+  - psutil library upgraded to 4.3.0
+  - configobj upgraded to 5.0.6
 
 ------------------------------------------------------------------------------
   yak 3.2.0 [2015.09.14]
 ------------------------------------------------------------------------------
 
   - psutil library update
-  - Remove stale PID from status file for TERMINATED/STOPPED components 
+  - Remove stale PID from status file for TERMINATED/STOPPED components
     while accessing is_alive property (e.g. info command)
   - Reduced wait time during components bootstrap/teardown
   - Allow to define multiple q runtime environments in system configuration
@@ -27,7 +36,7 @@
   yak 3.1.2 [2015.05.27]
 ------------------------------------------------------------------------------
 
-  - Extend command aliases functionality 
+  - Extend command aliases functionality
   - Silent mode for components
   - Fix: race condition in mem_rss/mem_vms retrieval
 
@@ -35,12 +44,12 @@
   yak 3.1.1 [2015.05.11]
 ------------------------------------------------------------------------------
 
-  - Filtering by component status support for info command 
+  - Filtering by component status support for info command
 
 ------------------------------------------------------------------------------
   yak 3.1.0 [2014.12.09]
 ------------------------------------------------------------------------------
-  
+
   - Experimental: Mac OS X support (via PyInstaller)
   - Introduce command aliases
   - Add inversion modifier for listing components and/or groups
