@@ -1,3 +1,5 @@
+This project is in maintenance mode. We may fix bugs, but no new features will be added in foreseeable future. 
+
 ## yak 3.2
 
 yak is an application used to manage Enterprise Components deployed on a single host.
